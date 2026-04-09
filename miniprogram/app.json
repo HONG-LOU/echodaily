@@ -1,0 +1,39 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/challenge/index",
+    "pages/profile/index",
+    "pages/practice/index",
+    "pages/report/index"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "每日回音",
+    "navigationBarBackgroundColor": "#f7f0e7",
+    "backgroundColor": "#f7f0e7",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#8e7f73",
+    "selectedColor": "#2f2a24",
+    "backgroundColor": "#fbf7f0",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "回音"
+      },
+      {
+        "pagePath": "pages/challenge/index",
+        "text": "挑战"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "componentFramework": "glass-easel",
+  "lazyCodeLoading": "requiredComponents"
+}

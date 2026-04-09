@@ -1,0 +1,112 @@
+<scroll-view class="screen" scroll-y enhanced show-scrollbar="{{false}}">
+  <view class="page-shell report-page">
+    <block wx:if="{{loading}}">
+      <view class="glass-card">
+        <view class="empty-state">正在生成你的回音雷达图和错词提示。</view>
+      </view>
+    </block>
+
+    <block wx:elif="{{errorMessage}}">
+      <view class="glass-card">
+        <view class="empty-state">
+          <text class="subtitle">{{errorMessage}}</text>
+          <button class="primary-button retry-button" bindtap="handleRetry">重新加载</button>
+        </view>
+      </view>
+    </block>
+
+    <block wx:elif="{{report}}">
+      <view class="glass-card score-card">
+        <view class="score-head">
+          <view>
+            <text class="eyebrow">Echo Report</text>
+            <text class="score-caption">{{report.lesson_title}}</text>
+          </view>
+          <text class="pill">{{report.mode === 'follow' ? '跟读模式' : '盲盒模式'}}</text>
+        </view>
+        <view class="score-shell">
+          <view class="score-bubble">
+            <text class="score-value">{{report.overall_score}}</text>
+            <text class="score-label">总分</text>
+          </view>
+          <view class="score-copy">
+            <text class="section-title">{{report.headline}}</text>
+            <text class="section-subtitle">{{report.encouragement}}</text>
+          </view>
+        </view>
+        <view class="summary-metrics">
+          <view class="summary-metric">
+            <text class="summary-metric__label">练习时长</text>
+            <text class="summary-metric__value">{{report.duration_seconds}} 秒</text>
+          </view>
+          <view class="summary-metric">
+            <text class="summary-metric__label">重点词</text>
+            <text class="summary-metric__value">{{report.mistake_count}} 个</text>
+          </view>
+          <view class="summary-metric">
+            <text class="summary-metric__label">相对位置</text>
+            <text class="summary-metric__value">{{report.comparison_ratio}}%</text>
+          </view>
+          <view class="summary-metric">
+            <text class="summary-metric__label">文本辅助</text>
+            <text class="summary-metric__value">{{report.transcript_used ? '已启用' : '未启用'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="glass-card radar-card">
+        <text class="section-kicker">Breakdown</text>
+        <text class="section-title">五维雷达</text>
+        <text class="section-subtitle">先把节奏和发音稳定住，再慢慢追语调和重音细节。</text>
+        <canvas canvas-id="radarCanvas" class="radar-canvas"></canvas>
+        <view class="dimension-list">
+          <view class="dimension-row" wx:for="{{report.dimensions}}" wx:key="key">
+            <text class="dimension-label">{{item.label}}</text>
+            <view class="dimension-track">
+              <view class="dimension-fill" style="width: {{item.score}}%;"></view>
+            </view>
+            <text class="dimension-score">{{item.score}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="glass-card highlight-card">
+        <text class="section-kicker">Coach Notes</text>
+        <text class="section-title">标红词纠音</text>
+        <text class="section-subtitle">先把最影响清晰度的几个点修掉，再去雕细节。</text>
+        <view class="highlight-item highlight-item--{{item.severity}}" wx:for="{{report.highlights}}" wx:key="word">
+          <view class="highlight-top">
+            <view>
+              <text class="highlight-word">{{item.word}}</text>
+              <text class="highlight-issue">{{item.observed_issue}}</text>
+            </view>
+            <text class="pill">{{item.expected_ipa}}</text>
+          </view>
+          <text class="highlight-tip">{{item.coach_tip}}</text>
+          <text class="highlight-severity">
+            {{item.severity === 'high' ? '重点修正' : item.severity === 'medium' ? '继续关注' : '轻提醒'}}
+          </text>
+        </view>
+      </view>
+
+      <view class="glass-card poster-card {{'poster-theme--' + report.poster_theme}}">
+        <text class="section-kicker">Share Preview</text>
+        <text class="section-title">声纹海报预览</text>
+        <text class="poster-quote">{{report.lesson_text}}</text>
+        <text class="poster-translation">{{report.translation}}</text>
+        <text class="poster-caption">{{report.poster_caption}}</text>
+        <view class="poster-footer">
+          <text class="pill">{{report.lesson_title}}</text>
+          <text class="pill">{{report.overall_score}} 分</text>
+        </view>
+      </view>
+
+      <view class="two-column-actions">
+        <button class="secondary-button" bindtap="goPracticeAgain">再练一遍</button>
+        <button class="primary-button" open-type="share">分享成绩</button>
+      </view>
+
+      <button class="secondary-button home-button" bindtap="goHome">回到首页</button>
+    </block>
+  </view>
+</scroll-view>

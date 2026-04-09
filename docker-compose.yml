@@ -1,0 +1,16 @@
+services:
+  echodaily-api:
+    build:
+      context: ./backend
+    container_name: echodaily-api
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: EchoDaily MVP API
+      ENVIRONMENT: production
+      API_V1_PREFIX: /api/v1
+      DATABASE_URL: sqlite+aiosqlite:///./data/echodaily.db
+      CORS_ORIGINS: "*"
+    volumes:
+      - ./backend/data:/app/data
+    restart: unless-stopped

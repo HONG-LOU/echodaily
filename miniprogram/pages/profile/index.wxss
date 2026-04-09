@@ -1,0 +1,250 @@
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.retry-button,
+.deploy-button,
+.coach-button {
+  margin-top: 24rpx;
+}
+
+.profile-hero,
+.badge-card,
+.notebook-card,
+.recent-card,
+.growth-card,
+.deploy-card {
+  padding: 32rpx;
+}
+
+.profile-hero {
+  background: linear-gradient(160deg, rgba(255, 253, 249, 0.96), rgba(246, 236, 226, 0.84));
+}
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+}
+
+.profile-avatar {
+  width: 116rpx;
+  height: 116rpx;
+  border-radius: 34rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #fffaf5, #f0d6ba);
+  font-size: 44rpx;
+  font-weight: 700;
+}
+
+.profile-copy {
+  flex: 1;
+}
+
+.profile-title {
+  font-size: 50rpx;
+}
+
+.profile-plan {
+  display: inline-flex;
+  margin-top: 16rpx;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--ink-base);
+  font-size: 22rpx;
+}
+
+.profile-focus {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-top: 26rpx;
+}
+
+.profile-focus__item {
+  padding: 22rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.profile-focus__label {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 22rpx;
+}
+
+.profile-focus__value {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 30rpx;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.profile-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14rpx;
+}
+
+.stat-card {
+  min-height: 220rpx;
+  padding: 26rpx 24rpx;
+}
+
+.stat-card--wide {
+  grid-column: span 2;
+}
+
+.stat-label {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 22rpx;
+}
+
+.stat-value {
+  display: block;
+  margin-top: 24rpx;
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.stat-caption {
+  display: block;
+  margin-top: 18rpx;
+  color: var(--ink-soft);
+  font-size: 22rpx;
+  line-height: 1.72;
+}
+
+.profile-target {
+  font-size: 30rpx;
+  line-height: 1.4;
+}
+
+.badge-list {
+  margin-top: 18rpx;
+}
+
+.badge-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 18rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid rgba(92, 77, 64, 0.08);
+}
+
+.badge-item:first-child {
+  padding-top: 10rpx;
+}
+
+.badge-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.badge-copy {
+  flex: 1;
+}
+
+.badge-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.badge-desc {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--ink-soft);
+  font-size: 24rpx;
+  line-height: 1.75;
+}
+
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 104rpx;
+  height: 50rpx;
+  margin-top: 6rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
+
+.badge-pill--on {
+  background: linear-gradient(180deg, rgba(255, 247, 233, 0.96), rgba(241, 216, 189, 0.9));
+  color: #8a5a20;
+}
+
+.badge-pill--off {
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--ink-soft);
+}
+
+.notebook-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid rgba(92, 77, 64, 0.08);
+}
+
+.notebook-item:last-child {
+  border-bottom: none;
+}
+
+.notebook-word {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.notebook-ipa,
+.notebook-tip {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--ink-soft);
+  font-size: 24rpx;
+  line-height: 1.75;
+}
+
+.recent-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid rgba(92, 77, 64, 0.08);
+}
+
+.recent-row:last-child {
+  border-bottom: none;
+}
+
+.recent-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.recent-time {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--ink-soft);
+  font-size: 22rpx;
+  line-height: 1.72;
+}
+
+.coach-note {
+  display: block;
+  color: var(--ink-base);
+  font-size: 26rpx;
+  line-height: 1.76;
+}

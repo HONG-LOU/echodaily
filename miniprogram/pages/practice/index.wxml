@@ -1,0 +1,112 @@
+<scroll-view class="screen" scroll-y enhanced show-scrollbar="{{false}}">
+  <view class="page-shell practice-page">
+    <block wx:if="{{loading}}">
+      <view class="glass-card">
+        <view class="empty-state">正在准备今天这句，还有你的录音工作台。</view>
+      </view>
+    </block>
+
+    <block wx:elif="{{errorMessage}}">
+      <view class="glass-card">
+        <view class="empty-state">
+          <text class="subtitle">{{errorMessage}}</text>
+          <button class="primary-button retry-button" bindtap="handleRetry">重新加载</button>
+        </view>
+      </view>
+    </block>
+
+    <block wx:elif="{{lesson}}">
+      <view class="glass-card practice-hero {{'practice-theme--' + lesson.theme_tone}}">
+        <view class="hero-glow hero-glow--peach"></view>
+        <view class="hero-glow hero-glow--sage"></view>
+        <view class="practice-hero__top">
+          <view>
+            <text class="eyebrow">Practice Lab</text>
+            <text class="practice-pack">{{lesson.pack_name}}</text>
+          </view>
+          <text class="pill">{{lesson.estimated_seconds}} 秒</text>
+        </view>
+        <view class="mode-switch">
+          <view class="mode-pill {{mode === 'follow' ? 'mode-pill--active' : ''}}" bindtap="toggleMode" data-mode="follow">
+            跟读
+          </view>
+          <view class="mode-pill {{mode === 'blind_box' ? 'mode-pill--active' : ''}}" bindtap="toggleMode" data-mode="blind_box">
+            盲盒
+          </view>
+        </view>
+        <text class="section-title practice-title">{{lesson.title}}</text>
+        <text class="section-subtitle">{{lesson.subtitle}}</text>
+        <view class="chip-row practice-chip-row">
+          <text class="chip" wx:for="{{lesson.tags}}" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+
+      <view class="glass-card script-card">
+        <text class="section-kicker">{{mode === 'follow' ? 'Reference' : 'Blind Box'}}</text>
+
+        <block wx:if="{{mode === 'follow' || showReferenceText}}">
+          <text class="script-english">{{lesson.english_text}}</text>
+          <text class="script-translation">{{lesson.translation}}</text>
+        </block>
+
+        <block wx:else>
+          <view class="script-scene">
+            <text class="script-scene-label">情景与释义</text>
+            <text class="script-scene-body">{{lesson.translation}}</text>
+            <text class="script-scene-hint">{{lesson.scenario}}</text>
+          </view>
+          <button class="secondary-button reveal-button" bindtap="revealReference">揭晓原句</button>
+        </block>
+
+        <view class="script-note-grid">
+          <view class="script-note">
+            <text class="script-note__label">模式提示</text>
+            <text class="script-note__body">{{mode === 'follow' ? lesson.mode_hint : lesson.blind_box_prompt}}</text>
+          </view>
+          <view class="script-note script-note--soft">
+            <text class="script-note__label">使用场景</text>
+            <text class="script-note__body">{{lesson.scenario}}</text>
+          </view>
+        </view>
+        <button class="mini-button hint-button" bindtap="previewHint">查看完整提示</button>
+      </view>
+
+      <view class="glass-card recorder-card">
+        <text class="section-kicker">Recorder</text>
+        <text class="section-title">录一段你的版本</text>
+        <text class="section-subtitle">先保留真实录音动作，当前评测仍由 MVP 服务生成，后面可以平滑切到正式 ASR。</text>
+        <view class="recorder-summary">
+          <text class="summary-chip">目标 {{lesson.estimated_seconds}} 秒</text>
+          <text class="summary-chip">{{mode === 'follow' ? '跟读模式' : '盲盒模式'}}</text>
+          <text class="summary-chip">{{tempFilePath ? '已录制' : '未录制'}}</text>
+        </view>
+        <view class="recorder-ring {{recording ? 'recorder-ring--active' : ''}}">
+          <text class="recorder-status">{{recording ? '录音中...' : '准备开始'}}</text>
+          <text class="recorder-time">{{recordedDuration ? recordedDuration + 's' : lesson.estimated_seconds + 's 目标时长'}}</text>
+        </view>
+        <view class="two-column-actions">
+          <button class="primary-button" wx:if="{{!recording}}" bindtap="startRecording">开始录音</button>
+          <button class="primary-button" wx:else bindtap="stopRecording">结束录音</button>
+          <button class="secondary-button" bindtap="playRecording" disabled="{{!tempFilePath}}">回放录音</button>
+        </view>
+      </view>
+
+      <view class="glass-card transcript-card">
+        <text class="section-kicker">Optional</text>
+        <text class="section-title">补充练习文本</text>
+        <text class="section-subtitle">选填。把你实际说出的英文贴进来，报告会更像真实识别和纠错结果。</text>
+        <textarea
+          class="soft-textarea"
+          value="{{transcriptInput}}"
+          bindinput="onTranscriptInput"
+          maxlength="500"
+          placeholder="例如：Clear is kind, and concise words travel further in every meeting."
+        ></textarea>
+      </view>
+
+      <button class="primary-button submit-button" bindtap="submitAssessment" loading="{{submitting}}">
+        生成回音报告
+      </button>
+    </block>
+  </view>
+</scroll-view>

@@ -1,0 +1,1 @@
+"""EchoDaily backend application package."""

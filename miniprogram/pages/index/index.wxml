@@ -1,0 +1,218 @@
+<scroll-view class="screen" scroll-y enhanced show-scrollbar="{{false}}">
+  <view class="page-shell home-page">
+    <block wx:if="{{loading}}">
+      <view class="glass-card loading-card">
+        <text class="eyebrow">EchoDaily</text>
+        <text class="title-xl">正在整理今天的开口节奏</text>
+        <text class="subtitle">首页、练习入口和挑战进度会一起准备好。</text>
+      </view>
+    </block>
+
+    <block wx:elif="{{errorMessage}}">
+      <view class="glass-card">
+        <view class="empty-state">
+          <text class="title-md">接口还没有连上</text>
+          <text class="subtitle">{{errorMessage}}</text>
+          <button class="primary-button retry-button" bindtap="handleRetry">重新加载</button>
+        </view>
+      </view>
+    </block>
+
+    <block wx:elif="{{dashboard}}">
+      <view class="glass-card hero-card">
+        <view class="hero-glow hero-glow--peach"></view>
+        <view class="hero-glow hero-glow--sage"></view>
+        <view class="hero-topbar">
+          <view>
+            <text class="eyebrow">EchoDaily</text>
+            <text class="hero-caption">Warm, clear, and a little more polished.</text>
+          </view>
+          <view class="avatar-bubble">
+            <text class="avatar-letter">{{dashboard.user.avatar_symbol}}</text>
+          </view>
+        </view>
+        <text class="hero-title">把英语说得更温柔一点</text>
+        <text class="hero-summary">{{dashboard.user.bio}}</text>
+        <view class="chip-row hero-chip-row">
+          <text class="chip">{{dashboard.user.nickname}} · {{dashboard.user.city}}</text>
+          <text class="pill">{{dashboard.user.plan_name}}</text>
+          <text class="pill">弱项 {{dashboard.user.weak_sound}}</text>
+        </view>
+        <view class="hero-foot">
+          <view class="hero-metric">
+            <text class="hero-metric__label">连续状态</text>
+            <text class="hero-metric__value">{{dashboard.user.streak_days}} 天</text>
+          </view>
+          <view class="hero-metric">
+            <text class="hero-metric__label">本周投入</text>
+            <text class="hero-metric__value">{{dashboard.user.weekly_minutes}} 分钟</text>
+          </view>
+          <view class="hero-focus">
+            <text class="hero-focus__label">当前主线</text>
+            <text class="hero-focus__value">{{dashboard.user.target_pack}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="section-block">
+        <view class="section-head section-head--stack">
+          <text class="section-kicker">Today</text>
+          <text class="section-title">今日回音</text>
+          <text class="section-subtitle">{{dashboard.today_lesson.pack_name}} · {{dashboard.today_lesson.subtitle}}</text>
+        </view>
+
+        <view class="glass-card lesson-card {{'lesson-theme--' + dashboard.today_lesson.theme_tone}}">
+          <view class="lesson-meta">
+            <view>
+              <text class="lesson-pack">{{dashboard.today_lesson.pack_name}}</text>
+              <text class="lesson-time">{{dashboard.today_lesson.estimated_seconds}} 秒精练</text>
+            </view>
+            <text class="pill">{{dashboard.today_lesson.difficulty}}</text>
+          </view>
+          <view class="chip-row">
+            <text class="chip" wx:for="{{dashboard.today_lesson.tags}}" wx:key="*this">{{item}}</text>
+          </view>
+          <text class="lesson-title">{{dashboard.today_lesson.title}}</text>
+          <text class="lesson-text">{{dashboard.today_lesson.english_text}}</text>
+          <text class="lesson-translation">{{dashboard.today_lesson.translation}}</text>
+          <view class="lesson-note-grid">
+            <view class="lesson-note">
+              <text class="lesson-note__label">场景</text>
+              <text class="lesson-note__body">{{dashboard.today_lesson.scenario}}</text>
+            </view>
+            <view class="lesson-note">
+              <text class="lesson-note__label">跟读提示</text>
+              <text class="lesson-note__body">{{dashboard.today_lesson.mode_hint}}</text>
+            </view>
+          </view>
+          <view class="lesson-highlight">
+            <text class="lesson-highlight__label">盲盒提醒</text>
+            <text class="lesson-highlight__body">{{dashboard.today_lesson.blind_box_prompt}}</text>
+          </view>
+          <view class="two-column-actions action-block">
+            <button
+              class="primary-button"
+              bindtap="startPractice"
+              data-lesson-id="{{dashboard.today_lesson.id}}"
+              data-mode="follow"
+            >
+              开始跟读
+            </button>
+            <button
+              class="secondary-button"
+              bindtap="startPractice"
+              data-lesson-id="{{dashboard.today_lesson.id}}"
+              data-mode="blind_box"
+            >
+              试试盲盒
+            </button>
+          </view>
+        </view>
+      </view>
+
+      <view class="section-block">
+        <view class="section-head section-head--stack">
+          <text class="section-kicker">Rhythm</text>
+          <text class="section-title">练习节奏</text>
+          <text class="section-subtitle">把碎片时间折成稳定的进步感。</text>
+        </view>
+        <view class="stat-grid">
+          <view class="glass-card stat-card" wx:for="{{dashboard.quick_stats}}" wx:key="label">
+            <text class="stat-label">{{item.label}}</text>
+            <text class="stat-value">{{item.value}}</text>
+            <text class="stat-caption">{{item.caption}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="section-block">
+        <view class="glass-card spotlight-card">
+          <view class="spotlight-top">
+            <view>
+              <text class="section-kicker">Challenge</text>
+              <text class="section-title">{{dashboard.challenge_spotlight.title}}</text>
+              <text class="section-subtitle">{{dashboard.challenge_spotlight.teaser}}</text>
+            </view>
+            <text class="pill">剩余 {{dashboard.challenge_spotlight.days_left}} 天</text>
+          </view>
+          <view class="spotlight-metrics">
+            <view class="metric-item">
+              <text class="metric-value">{{dashboard.challenge_spotlight.participants}}</text>
+              <text class="metric-label">参与人数</text>
+            </view>
+            <view class="metric-item">
+              <text class="metric-value">¥{{dashboard.challenge_spotlight.deposit_amount}}</text>
+              <text class="metric-label">契约金</text>
+            </view>
+            <view class="metric-item">
+              <text class="metric-value">¥{{dashboard.challenge_spotlight.reward_pool}}</text>
+              <text class="metric-label">奖金池</text>
+            </view>
+            <view class="metric-item">
+              <text class="metric-value">{{dashboard.challenge_spotlight.score_threshold}}</text>
+              <text class="metric-label">达标分</text>
+            </view>
+          </view>
+          <button class="primary-button" bindtap="openChallenge">去看挑战详情</button>
+        </view>
+      </view>
+
+      <view class="section-block" wx:if="{{dashboard.recent_scores.length}}">
+        <view class="section-head section-head--stack">
+          <text class="section-kicker">History</text>
+          <text class="section-title">最近成绩</text>
+          <text class="section-subtitle">保持回看，会更容易把错误收进自己的发音肌肉里。</text>
+        </view>
+        <view class="glass-card recent-card">
+          <view
+            class="recent-row"
+            wx:for="{{dashboard.recent_scores}}"
+            wx:key="assessment_id"
+            bindtap="openRecentReport"
+            data-assessment-id="{{item.assessment_id}}"
+          >
+            <view>
+              <text class="recent-title">{{item.lesson_title}}</text>
+              <text class="recent-time">{{item.practiced_at}}</text>
+            </view>
+            <view class="recent-score">{{item.overall_score}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="section-block">
+        <view class="glass-card partner-card">
+          <text class="section-kicker">Next</text>
+          <text class="section-title">{{dashboard.partner_pitch.title}}</text>
+          <text class="section-subtitle">{{dashboard.partner_pitch.summary}}</text>
+          <view class="bullet-list">
+            <view class="bullet-row" wx:for="{{dashboard.partner_pitch.bullets}}" wx:key="*this">
+              <text class="bullet-dot"></text>
+              <text class="bullet-copy">{{item}}</text>
+            </view>
+          </view>
+          <view class="offer-strip">
+            <view class="offer-panel">
+              <text class="offer-label">{{dashboard.membership_offer.title}}</text>
+              <text class="offer-value">{{dashboard.membership_offer.monthly_price}}</text>
+              <text class="offer-caption">月度方案</text>
+            </view>
+            <view class="offer-panel">
+              <text class="offer-label">{{dashboard.membership_offer.title}}</text>
+              <text class="offer-value">{{dashboard.membership_offer.yearly_price}}</text>
+              <text class="offer-caption">年度方案</text>
+            </view>
+          </view>
+          <view class="soft-divider"></view>
+          <view class="bullet-list membership-highlights">
+            <view class="bullet-row" wx:for="{{dashboard.membership_offer.highlights}}" wx:key="*this">
+              <text class="bullet-dot"></text>
+              <text class="bullet-copy">{{item}}</text>
+            </view>
+          </view>
+          <text class="membership-note">{{dashboard.membership_offer.call_to_action}}</text>
+        </view>
+      </view>
+    </block>
+  </view>
+</scroll-view>
