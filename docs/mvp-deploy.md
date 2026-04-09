@@ -38,6 +38,22 @@ export WECHAT_APP_SECRET=你的小程序AppSecret
 docker compose up -d --build
 ```
 
+如果要启用真实口语评测，还需要同时确认：
+
+```bash
+export TENCENTCLOUD_SECRET_ID=你的SecretId
+export TENCENTCLOUD_SECRET_KEY=你的SecretKey
+docker compose up -d --build
+```
+
+- 当前后端默认对接的是「口语评测（新版本）」WebSocket 接口
+- 若未显式配置 `TENCENTCLOUD_APP_ID`，后端会用当前密钥自动调用 CAM `GetUserAppId` 获取腾讯云账号 AppId
+- 若你是历史老账号，要继续使用旧版 `soe.tencentcloudapi.com` 接口，可把 `TENCENTCLOUD_SOE_TRANSPORT=legacy_sdk`
+- 默认引擎类型是 `16k_en`，可用 `TENCENTCLOUD_SOE_SERVER_ENGINE_TYPE` 覆盖
+- 腾讯云账号已开通「口语评测（新版本）」资源
+- 账号未欠费、未被隔离
+- `TENCENTCLOUD_SOE_APP_ID` 仅旧版 SDK 路径需要
+
 ## 3. 小程序联调
 
 当前小程序默认读取的后端地址已经改为：
@@ -71,4 +87,4 @@ https://template-chat.xyz/api/v1
 - 已完成：首页、练习、报告、挑战、我的五个页面闭环。
 - 已完成：FastAPI 后端、微信登录、真实用户会话、挑战与个人中心接口。
 - 已完成：Dockerfile、docker-compose、PostgreSQL 持久化目录。
-- 当前评测为 MVP 模拟服务，后续可在后端 `AssessmentService` 中替换为真实 ASR / 语音评分能力。
+- 当前评测链路默认接入腾讯云「口语评测（新版本）」；若购买的是新版资源包，不需要再走旧版 `soe.tencentcloudapi.com`。

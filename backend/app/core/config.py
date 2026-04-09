@@ -1,6 +1,6 @@
 import json
 from functools import lru_cache
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -17,8 +17,11 @@ class Settings(BaseSettings):
     auth_session_days: int = Field(default=30, ge=1, le=365)
     tencentcloud_secret_id: str | None = None
     tencentcloud_secret_key: str | None = None
+    tencentcloud_app_id: str | None = None
     tencentcloud_soe_app_id: str | None = None
     tencentcloud_soe_region: str = "ap-guangzhou"
+    tencentcloud_soe_transport: Literal["new_websocket", "legacy_sdk"] = "new_websocket"
+    tencentcloud_soe_server_engine_type: str = "16k_en"
     tencentcloud_soe_score_coeff: float = Field(default=3.0, ge=1.0, le=4.0)
     tencentcloud_soe_req_timeout_seconds: int = Field(default=30, ge=5, le=120)
 
@@ -52,6 +55,7 @@ class Settings(BaseSettings):
         "wechat_app_secret",
         "tencentcloud_secret_id",
         "tencentcloud_secret_key",
+        "tencentcloud_app_id",
         "tencentcloud_soe_app_id",
         mode="before",
     )
@@ -69,6 +73,14 @@ class Settings(BaseSettings):
             return "ap-guangzhou"
         stripped = str(value).strip()
         return stripped or "ap-guangzhou"
+
+    @field_validator("tencentcloud_soe_server_engine_type", mode="before")
+    @classmethod
+    def normalize_tencentcloud_server_engine_type(cls, value: Any) -> str:
+        if value is None:
+            return "16k_en"
+        stripped = str(value).strip()
+        return stripped or "16k_en"
 
     @model_validator(mode="after")
     def validate_tencentcloud_credentials(self) -> "Settings":

@@ -177,6 +177,7 @@ dependencies = [
     { name = "tencentcloud-sdk-python-common" },
     { name = "tencentcloud-sdk-python-soe" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "websockets" },
 ]
 
 [package.dev-dependencies]
@@ -197,6 +198,7 @@ requires-dist = [
     { name = "tencentcloud-sdk-python-common", specifier = ">=3.1.73" },
     { name = "tencentcloud-sdk-python-soe", specifier = ">=3.0.1459" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.35.0,<0.36.0" },
+    { name = "websockets", specifier = ">=16.0,<17.0" },
 ]
 
 [package.metadata.requires-dev]

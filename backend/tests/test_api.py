@@ -18,6 +18,7 @@ os.environ["TENCENTCLOUD_SECRET_ID"] = "test-secret-id"
 os.environ["TENCENTCLOUD_SECRET_KEY"] = "test-secret-key"
 
 from app.api.dependencies import oral_evaluation_client, wechat_auth_client  # noqa: E402
+from app.core.errors import ServiceUnavailableError  # noqa: E402
 from app.integrations.tencent_oral_evaluation_client import (  # noqa: E402
     EvaluatedWord,
     OralEvaluationResult,
@@ -119,3 +120,27 @@ def test_assessment_creation_returns_report() -> None:
     assert report["overall_score"] == 86
     assert report["recognized_text"].startswith("Clear is kind")
     assert report["highlights"]
+
+
+def test_assessment_creation_surfaces_service_unavailable_message() -> None:
+    oral_evaluation_client.evaluate_sentence = AsyncMock(
+        side_effect=ServiceUnavailableError(
+            "腾讯云口语评测服务当前不可用，请确认账号已开通口语评测服务且未欠费。",
+            code="speech_assessment_account_unavailable",
+        )
+    )
+    payload = {
+        "lesson_id": "lesson-office-kind",
+        "duration_seconds": 22,
+        "audio_format": "mp3",
+        "audio_base64": "YXVkaW8=",
+    }
+
+    with TestClient(app) as client:
+        headers = login_and_get_headers(client, openid="openid-assessment-error", nickname="Luna")
+        response = client.post("/api/v1/assessments", json=payload, headers=headers)
+
+    assert response.status_code == 503
+    error_payload = response.json()
+    assert error_payload["code"] == "speech_assessment_account_unavailable"
+    assert "未欠费" in error_payload["message"]
