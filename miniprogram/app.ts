@@ -1,33 +1,14 @@
-const developApiBaseUrl = "http://127.0.0.1:8000/api/v1";
-const releaseApiBaseUrl = "https://your-production-domain.example/api/v1";
-
-function normalizeApiBaseUrl(value: unknown): string {
-  return String(value || "")
-    .trim()
-    .replace(/\/$/, "");
-}
-
-function getEnvVersion(): "develop" | "trial" | "release" {
-  try {
-    return wx.getAccountInfoSync().miniProgram.envVersion;
-  } catch {
-    return "develop";
-  }
-}
+const defaultApiBaseUrl = "https://template-chat.xyz/api/v1";
 
 App<IAppOption>({
   globalData: {
-    apiBaseUrl: developApiBaseUrl,
+    apiBaseUrl: defaultApiBaseUrl,
     userId: "",
     accessToken: "",
     tokenExpiresAt: "",
     lastAssessmentId: "",
   },
   onLaunch() {
-    const envVersion = getEnvVersion();
-    const defaultApiBaseUrl =
-      envVersion === "develop" ? developApiBaseUrl : releaseApiBaseUrl;
-
     this.globalData.apiBaseUrl = defaultApiBaseUrl;
     wx.setStorageSync("apiBaseUrl", defaultApiBaseUrl);
 
