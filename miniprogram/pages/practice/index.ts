@@ -1,16 +1,13 @@
 import { createAssessment, fetchLesson } from "../../utils/api";
-import type { AssessmentMode, Lesson } from "../../types/api";
+import type { Lesson } from "../../types/api";
 
 interface PracticePageData {
   loading: boolean;
   errorMessage: string;
   lesson: Lesson | null;
-  mode: AssessmentMode;
-  showReferenceText: boolean;
   recording: boolean;
   recordedDuration: number;
   tempFilePath: string;
-  transcriptInput: string;
   submitting: boolean;
 }
 
@@ -20,13 +17,11 @@ type PracticePageCustom = {
   audioContext: WechatMiniprogram.InnerAudioContext | null;
   loadLesson: (lessonId: string) => Promise<void>;
   setupRecorder: () => void;
-  toggleMode: (event: WechatMiniprogram.BaseEvent) => void;
-  revealReference: () => void;
   previewHint: () => void;
   startRecording: () => void;
   stopRecording: () => void;
   playRecording: () => void;
-  onTranscriptInput: (event: WechatMiniprogram.CustomEvent<{ value: string }>) => void;
+  readRecordedAudio: () => Promise<string>;
   submitAssessment: () => Promise<void>;
   handleRetry: () => void;
 };
@@ -36,12 +31,9 @@ Page<PracticePageData, PracticePageCustom>({
     loading: true,
     errorMessage: "",
     lesson: null,
-    mode: "follow",
-    showReferenceText: true,
     recording: false,
     recordedDuration: 0,
     tempFilePath: "",
-    transcriptInput: "",
     submitting: false,
   },
 
@@ -50,14 +42,9 @@ Page<PracticePageData, PracticePageCustom>({
   lessonId: "",
 
   onLoad(query) {
-    const mode = (query.mode || "follow") as AssessmentMode;
     const lessonId = query.lessonId || "";
     this.lessonId = lessonId;
 
-    this.setData({
-      mode,
-      showReferenceText: mode === "follow",
-    });
     this.setupRecorder();
     if (lessonId) {
       void this.loadLesson(lessonId);
@@ -105,6 +92,8 @@ Page<PracticePageData, PracticePageCustom>({
     this.recorderManager.onStart(() => {
       this.setData({
         recording: true,
+        tempFilePath: "",
+        recordedDuration: 0,
       });
     });
 
@@ -112,7 +101,7 @@ Page<PracticePageData, PracticePageCustom>({
       this.setData({
         recording: false,
         tempFilePath: result.tempFilePath,
-        recordedDuration: Math.max(5, Math.round(result.duration / 1000)),
+        recordedDuration: Math.max(1, Math.round(result.duration / 1000)),
       });
     });
 
@@ -127,30 +116,15 @@ Page<PracticePageData, PracticePageCustom>({
     });
   },
 
-  toggleMode(event) {
-    const nextMode = String(event.currentTarget.dataset.mode || "follow") as AssessmentMode;
-    this.setData({
-      mode: nextMode,
-      showReferenceText: nextMode === "follow",
-    });
-  },
-
-  revealReference() {
-    this.setData({
-      showReferenceText: true,
-    });
-  },
-
   previewHint() {
     const lesson = this.data.lesson;
     if (!lesson) {
       return;
     }
 
-    const content = this.data.mode === "follow" ? lesson.mode_hint : lesson.blind_box_prompt;
     wx.showModal({
-      title: this.data.mode === "follow" ? "跟读提示" : "盲盒提示",
-      content,
+      title: "跟读提示",
+      content: lesson.mode_hint,
       showCancel: false,
       confirmText: "知道了",
     });
@@ -162,9 +136,9 @@ Page<PracticePageData, PracticePageCustom>({
       success: () => {
         this.recorderManager?.start({
           duration: 60000,
-          sampleRate: 44100,
+          sampleRate: 16000,
           numberOfChannels: 1,
-          encodeBitRate: 192000,
+          encodeBitRate: 96000,
           format: "mp3",
         });
       },
@@ -199,22 +173,39 @@ Page<PracticePageData, PracticePageCustom>({
     this.audioContext.play();
   },
 
-  onTranscriptInput(event) {
-    this.setData({
-      transcriptInput: event.detail.value,
+  readRecordedAudio() {
+    const { tempFilePath } = this.data;
+    if (!tempFilePath) {
+      return Promise.reject(new Error("请先完成录音。"));
+    }
+
+    return new Promise((resolve, reject) => {
+      wx.getFileSystemManager().readFile({
+        filePath: tempFilePath,
+        encoding: "base64",
+        success: (result) => {
+          if (typeof result.data === "string" && result.data.trim()) {
+            resolve(result.data);
+            return;
+          }
+
+          reject(new Error("录音文件读取失败。"));
+        },
+        fail: () => {
+          reject(new Error("录音文件读取失败。"));
+        },
+      });
     });
   },
 
   async submitAssessment() {
-    const { lesson, mode, recordedDuration, transcriptInput } = this.data;
+    const { lesson, recordedDuration } = this.data;
     if (!lesson) {
       return;
     }
-
-    const trimmedTranscript = transcriptInput.trim();
-    if (!recordedDuration && !trimmedTranscript) {
+    if (!this.data.tempFilePath) {
       wx.showToast({
-        title: "请先录音，或补充练习文本",
+        title: "请先录音",
         icon: "none",
       });
       return;
@@ -225,11 +216,12 @@ Page<PracticePageData, PracticePageCustom>({
     });
 
     try {
+      const audioBase64 = await this.readRecordedAudio();
       const report = await createAssessment({
         lesson_id: lesson.id,
-        mode,
         duration_seconds: recordedDuration || lesson.estimated_seconds,
-        transcript: trimmedTranscript || undefined,
+        audio_format: "mp3",
+        audio_base64: audioBase64,
       });
       const app = getApp<IAppOption>();
       app.globalData.lastAssessmentId = report.id;

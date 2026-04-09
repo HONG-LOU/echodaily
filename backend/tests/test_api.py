@@ -14,8 +14,14 @@ test_database.parent.mkdir(parents=True, exist_ok=True)
 os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{test_database.as_posix()}"
 os.environ["WECHAT_APP_ID"] = "wx-test-appid"
 os.environ["WECHAT_APP_SECRET"] = "wx-test-secret"
+os.environ["TENCENTCLOUD_SECRET_ID"] = "test-secret-id"
+os.environ["TENCENTCLOUD_SECRET_KEY"] = "test-secret-key"
 
-from app.api.dependencies import wechat_auth_client  # noqa: E402
+from app.api.dependencies import oral_evaluation_client, wechat_auth_client  # noqa: E402
+from app.integrations.tencent_oral_evaluation_client import (  # noqa: E402
+    EvaluatedWord,
+    OralEvaluationResult,
+)
 from app.integrations.wechat_auth_client import WechatSessionData  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -60,14 +66,48 @@ def test_dashboard_endpoint_returns_today_lesson() -> None:
     payload = response.json()
     assert payload["today_lesson"]["id"] == "lesson-office-kind"
     assert payload["user"]["nickname"] == "Mia"
+    assert "recent_scores" in payload
+    assert "challenge_spotlight" not in payload
 
 
 def test_assessment_creation_returns_report() -> None:
+    oral_evaluation_client.evaluate_sentence = AsyncMock(
+        return_value=OralEvaluationResult(
+            session_id="session-1",
+            request_id="request-1",
+            overall_score=86,
+            pronunciation_score=88,
+            fluency_score=84,
+            completeness_score=92,
+            stress_score=79,
+            recognized_text="Clear is kind and concise words travel further in every meeting.",
+            words=[
+                EvaluatedWord(
+                    word="concise",
+                    match_tag=3,
+                    pronunciation_score=61,
+                    fluency_score=70,
+                    expected_ipa="/kən ˈsaɪs/",
+                    observed_ipa="/kən ˈsais/",
+                    stress_mismatch_count=1,
+                ),
+                EvaluatedWord(
+                    word="meeting",
+                    match_tag=0,
+                    pronunciation_score=94,
+                    fluency_score=90,
+                    expected_ipa="/ˈmiː tɪŋ/",
+                    observed_ipa="/ˈmiː tɪŋ/",
+                    stress_mismatch_count=0,
+                ),
+            ],
+        )
+    )
     payload = {
         "lesson_id": "lesson-office-kind",
-        "mode": "follow",
         "duration_seconds": 22,
-        "transcript": "Clear is kind and concise words travel further in every meeting.",
+        "audio_format": "mp3",
+        "audio_base64": "YXVkaW8=",
     }
 
     with TestClient(app) as client:
@@ -76,5 +116,6 @@ def test_assessment_creation_returns_report() -> None:
 
     assert response.status_code == 201
     report = response.json()
-    assert report["overall_score"] >= 70
+    assert report["overall_score"] == 86
+    assert report["recognized_text"].startswith("Clear is kind")
     assert report["highlights"]

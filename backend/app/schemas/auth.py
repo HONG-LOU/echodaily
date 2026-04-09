@@ -23,8 +23,6 @@ class AuthenticatedUserSchema(BaseModel):
     avatar_url: str | None
     city: str
     bio: str
-    plan_name: str
-    pro_active: bool
 
     model_config = ConfigDict(from_attributes=True)
 

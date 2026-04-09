@@ -1,7 +1,6 @@
 import type {
   AssessmentCreatePayload,
   AssessmentDetail,
-  ChallengeSummary,
   DashboardResponse,
   Lesson,
   ProfileResponse,
@@ -37,39 +36,20 @@ function normalizeApiBaseUrl(value: unknown, fallback: string): string {
 
 function getRuntimeConfig(): {
   apiBaseUrl: string;
-  userId: string;
   accessToken: string;
   tokenExpiresAt: string;
 } {
   const app = getApp<IAppOption>();
   const storedApiBaseUrl = wx.getStorageSync("apiBaseUrl");
-  const storedUserId = wx.getStorageSync("userId");
   const storedAccessToken = wx.getStorageSync("accessToken");
   const storedTokenExpiresAt = wx.getStorageSync("tokenExpiresAt");
   const resolvedApiBaseUrl = normalizeApiBaseUrl(storedApiBaseUrl, app.globalData.apiBaseUrl);
 
   return {
     apiBaseUrl: resolvedApiBaseUrl,
-    userId: String(storedUserId || app.globalData.userId || ""),
     accessToken: String(storedAccessToken || app.globalData.accessToken || ""),
     tokenExpiresAt: String(storedTokenExpiresAt || app.globalData.tokenExpiresAt || ""),
   };
-}
-
-export function getApiBaseUrl(): string {
-  return getRuntimeConfig().apiBaseUrl;
-}
-
-export function getDefaultUserId(): string {
-  return getRuntimeConfig().userId;
-}
-
-export function saveApiBaseUrl(nextBaseUrl: string): string {
-  const normalizedBaseUrl = nextBaseUrl.trim().replace(/\/$/, "");
-  const app = getApp<IAppOption>();
-  app.globalData.apiBaseUrl = normalizedBaseUrl;
-  wx.setStorageSync("apiBaseUrl", normalizedBaseUrl);
-  return normalizedBaseUrl;
 }
 
 function hasValidAccessToken(accessToken: string, tokenExpiresAt: string): boolean {
@@ -253,10 +233,6 @@ export function fetchLesson(lessonId: string): Promise<Lesson> {
   return request<Lesson>(`/lessons/${lessonId}`);
 }
 
-export function fetchTodayLesson(): Promise<Lesson> {
-  return request<Lesson>("/lessons/today");
-}
-
 export function createAssessment(payload: AssessmentCreatePayload): Promise<AssessmentDetail> {
   return request<AssessmentDetail>("/assessments", {
     method: "POST",
@@ -269,10 +245,6 @@ export function createAssessment(payload: AssessmentCreatePayload): Promise<Asse
 
 export function fetchAssessment(assessmentId: string): Promise<AssessmentDetail> {
   return request<AssessmentDetail>(`/assessments/${assessmentId}`);
-}
-
-export function fetchChallenges(): Promise<ChallengeSummary[]> {
-  return request<ChallengeSummary[]>("/challenges");
 }
 
 export function fetchProfile(): Promise<ProfileResponse> {

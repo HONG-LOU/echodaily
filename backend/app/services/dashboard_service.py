@@ -1,20 +1,17 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError
 from app.db.models import UserProfile
 from app.repositories.assessment_repository import AssessmentRepository
-from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.lesson_repository import LessonRepository
 from app.schemas.dashboard import (
     DashboardResponseSchema,
     DashboardUserSchema,
     LessonSpotlightSchema,
-    MembershipOfferSchema,
-    PartnerPitchSchema,
     RecentScoreSchema,
     StatCardSchema,
 )
@@ -24,11 +21,9 @@ class DashboardService:
     def __init__(
         self,
         lesson_repository: LessonRepository,
-        challenge_repository: ChallengeRepository,
         assessment_repository: AssessmentRepository,
     ) -> None:
         self.lesson_repository = lesson_repository
-        self.challenge_repository = challenge_repository
         self.assessment_repository = assessment_repository
 
     async def get_dashboard(
@@ -42,57 +37,38 @@ class DashboardService:
         if lesson is None:
             raise NotFoundError("No lesson available yet.", code="lesson_not_found")
 
-        challenges = await self.challenge_repository.list_active(session)
-        challenge = challenges[0] if challenges else None
         recent_submissions = await self.assessment_repository.list_recent_by_user(
             session,
             current_user.id,
             limit=3,
         )
-        remaining_days_for_badge = max(0, 7 - current_user.streak_days)
-
+        weekly_duration_seconds = await self.assessment_repository.get_total_duration_by_user_since(
+            session,
+            current_user.id,
+            start_time=datetime.now(UTC) - timedelta(days=7),
+        )
+        weekly_minutes = (
+            0
+            if weekly_duration_seconds == 0
+            else max(1, round(weekly_duration_seconds / 60))
+        )
         quick_stats = [
             StatCardSchema(
-                label="连续打卡",
+                label="连续练习",
                 value=f"{current_user.streak_days} 天",
-                caption=(
-                    "已解锁“初试啼声”徽章"
-                    if remaining_days_for_badge == 0
-                    else f"离“初试啼声”徽章还差 {remaining_days_for_badge} 天"
-                ),
+                caption="保持每天开口，稳定感会比突击更重要。",
             ),
             StatCardSchema(
-                label="本周练习",
-                value=f"{current_user.weekly_minutes} 分钟",
-                caption="碎片化练习也能积累质感",
+                label="累计练习",
+                value=f"{current_user.total_practices} 次",
+                caption="每一次录音都会沉淀成你的发音样本。",
             ),
             StatCardSchema(
-                label="弱项音标",
+                label="重点音素",
                 value=current_user.weak_sound,
-                caption="今天建议盯住这一个细节",
+                caption="下一次练习优先盯住这个发音细节。",
             ),
         ]
-        membership_offer = MembershipOfferSchema(
-            title="Pro 会员",
-            monthly_price="¥15 / 月",
-            yearly_price="¥98 / 年",
-            highlights=[
-                "解锁音素级纠错和错词详情",
-                "高级海报模板去水印",
-                "历史题库与长期错题本",
-            ],
-            call_to_action="先用 MVP 验证打卡和转化，再接正式支付。",
-        )
-        partner_pitch = PartnerPitchSchema(
-            title="私域合作入口",
-            summary="适合英语博主、雅思工作室和小班课老师作为官方作业打卡工具。",
-            bullets=[
-                "支持专属内容标签与班级圈原型",
-                "天然适合返佣和私域转化",
-                "后续可接企业微信沉淀高质量用户",
-            ],
-            call_to_action="在“我的”页预留老师微信/企微入口即可开启冷启动。",
-        )
         recent_scores = [
             RecentScoreSchema(
                 assessment_id=item.id,
@@ -103,34 +79,20 @@ class DashboardService:
             for item in recent_submissions
         ]
 
-        challenge_spotlight = (
-            {
-                "title": challenge.title,
-                "participants": challenge.participants,
-                "days_left": challenge.days_left,
-                "deposit_amount": challenge.deposit_amount,
-                "reward_pool": challenge.reward_pool,
-                "score_threshold": challenge.score_threshold,
-                "teaser": challenge.teaser,
-            }
-            if challenge is not None
-            else {
-                "title": "共学挑战筹备中",
-                "participants": 0,
-                "days_left": 0,
-                "deposit_amount": 0,
-                "reward_pool": 0,
-                "score_threshold": 80,
-                "teaser": "下一批挑战营即将开放。",
-            }
-        )
-
         return DashboardResponseSchema(
-            user=DashboardUserSchema.model_validate(current_user),
+            user=DashboardUserSchema(
+                id=current_user.id,
+                nickname=current_user.nickname,
+                avatar_symbol=current_user.avatar_symbol,
+                avatar_url=current_user.avatar_url,
+                streak_days=current_user.streak_days,
+                total_practices=current_user.total_practices,
+                weekly_minutes=weekly_minutes,
+                weak_sound=current_user.weak_sound,
+                city=current_user.city,
+                bio=current_user.bio,
+            ),
             today_lesson=LessonSpotlightSchema.model_validate(lesson),
             quick_stats=quick_stats,
-            challenge_spotlight=challenge_spotlight,
-            membership_offer=membership_offer,
-            partner_pitch=partner_pitch,
             recent_scores=recent_scores,
         )

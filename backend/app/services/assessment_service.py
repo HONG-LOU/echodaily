@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-import hashlib
-import re
-from datetime import UTC, datetime
-from difflib import SequenceMatcher
+from datetime import UTC, date, datetime, timedelta
 from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError
 from app.db.models import Lesson, Submission, UserProfile
+from app.integrations.tencent_oral_evaluation_client import (
+    EvaluatedWord,
+    OralEvaluationResult,
+    TencentOralEvaluationClient,
+)
 from app.repositories.assessment_repository import AssessmentRepository
 from app.repositories.lesson_repository import LessonRepository
 from app.schemas.assessment import (
@@ -19,18 +21,8 @@ from app.schemas.assessment import (
     AssessmentHighlightSchema,
 )
 
-WORD_COACH_LIBRARY: dict[str, tuple[str, str, str]] = {
-    "clear": ("/klɪr/", "元音拉得不够开。", "先把 /kl/ 贴紧，再把 /ɪr/ 拉圆一点。"),
-    "concise": ("/kənˈsaɪs/", "重音没有落稳在第二拍。", "前轻后重，把 /saɪs/ 明确抬起来。"),
-    "meeting": ("/ˈmiːtɪŋ/", "尾音 /ŋ/ 收得太急。", "结尾别咬成 /n/，让鼻音轻轻挂住。"),
-    "kind": ("/kaɪnd/", "双元音过短，听感偏扁。", "把 /kaɪ/ 放慢半拍，再落到 /nd/。"),
-    "softly": ("/ˈsɒftli/", "中间的 /f/ 摩擦感偏弱。", "上齿轻碰下唇，把气流送出来。"),
-    "fear": ("/fɪr/", "元音偏平，少了张力。", "像轻轻叹气一样把 /ɪr/ 拉开。"),
-    "courage": ("/ˈkʌrɪdʒ/", "结尾 /dʒ/ 不够干净。", "重音先给足，再把尾辅音收利落。"),
-    "quiet": ("/ˈkwaɪət/", "双元音收得太快。", "先打开 /kwaɪ/，再轻轻落到 /ət/。"),
-    "choices": ("/ˈtʃɔɪsɪz/", "尾音 /ɪz/ 略弱。", "最后一拍别吞掉，轻轻弹出来。"),
-    "brave": ("/breɪv/", "元音延展度不够。", "把 /eɪ/ 再抬高一点，声音会更亮。"),
-}
+MATCH_TAG_MISSING = 2
+MATCH_TAG_MISREAD = 3
 
 
 class AssessmentService:
@@ -38,9 +30,11 @@ class AssessmentService:
         self,
         assessment_repository: AssessmentRepository,
         lesson_repository: LessonRepository,
+        oral_evaluation_client: TencentOralEvaluationClient,
     ) -> None:
         self.assessment_repository = assessment_repository
         self.lesson_repository = lesson_repository
+        self.oral_evaluation_client = oral_evaluation_client
 
     async def create_assessment(
         self,
@@ -52,33 +46,54 @@ class AssessmentService:
         if lesson is None:
             raise NotFoundError("Lesson not found.", code="lesson_not_found")
 
-        result = self._evaluate_lesson(lesson=lesson, payload=payload)
+        latest_submission = await self.assessment_repository.get_latest_by_user(
+            session,
+            current_user.id,
+        )
+        evaluation = await self.oral_evaluation_client.evaluate_sentence(
+            reference_text=lesson.english_text,
+            audio_base64=payload.audio_base64,
+            audio_format=payload.audio_format,
+        )
+        highlights = self._build_highlights(evaluation.words)
+        rhythm_score = self._build_rhythm_score(evaluation=evaluation)
+        headline, encouragement = self._build_copy(
+            overall_score=evaluation.overall_score,
+            highlights=highlights,
+        )
+        created_at = datetime.now(UTC)
+
         submission = Submission(
             id=f"assessment-{uuid4().hex[:16]}",
             user_id=current_user.id,
             lesson_id=lesson.id,
-            mode=payload.mode,
+            mode="follow",
             duration_seconds=payload.duration_seconds,
-            transcript=payload.transcript,
-            transcript_used=result["transcript_used"],
-            comparison_ratio=result["comparison_ratio"],
-            overall_score=result["overall_score"],
-            pronunciation_score=result["pronunciation"],
-            fluency_score=result["fluency"],
-            intonation_score=result["intonation"],
-            stress_score=result["stress"],
-            completeness_score=result["completeness"],
-            mistake_count=len(result["highlights"]),
-            highlight_words=result["highlights"],
-            headline=result["headline"],
-            encouragement=result["encouragement"],
-            poster_caption=result["poster_caption"],
-            poster_theme=result["poster_theme"],
-            created_at=datetime.now(UTC),
+            transcript=evaluation.recognized_text or None,
+            transcript_used=bool(evaluation.recognized_text),
+            comparison_ratio=round(evaluation.completeness_score / 100, 2),
+            overall_score=evaluation.overall_score,
+            pronunciation_score=evaluation.pronunciation_score,
+            fluency_score=evaluation.fluency_score,
+            intonation_score=rhythm_score,
+            stress_score=evaluation.stress_score,
+            completeness_score=evaluation.completeness_score,
+            mistake_count=len(highlights),
+            highlight_words=highlights,
+            headline=headline,
+            encouragement=encouragement,
+            poster_caption=evaluation.request_id or "tencentcloud-soe",
+            poster_theme=payload.audio_format,
+            created_at=created_at,
         )
         await self.assessment_repository.add(session, submission)
-        current_user.total_practices += 1
-        current_user.weekly_minutes += max(1, round(payload.duration_seconds / 60))
+        self._update_user_progress(
+            current_user=current_user,
+            latest_submission=latest_submission,
+            created_at=created_at,
+            duration_seconds=payload.duration_seconds,
+            highlights=highlights,
+        )
         await session.commit()
         return self._build_detail_schema(submission=submission, lesson=lesson)
 
@@ -89,9 +104,7 @@ class AssessmentService:
         assessment_id: str,
     ) -> AssessmentDetailSchema:
         submission = await self.assessment_repository.get_by_id(session, assessment_id)
-        if submission is None:
-            raise NotFoundError("Assessment not found.", code="assessment_not_found")
-        if submission.user_id != current_user.id:
+        if submission is None or submission.user_id != current_user.id:
             raise NotFoundError("Assessment not found.", code="assessment_not_found")
 
         lesson = await self.lesson_repository.get_by_id(session, submission.lesson_id)
@@ -118,9 +131,9 @@ class AssessmentService:
                 score=submission.fluency_score,
             ),
             AssessmentDimensionSchema(
-                key="intonation",
-                label="语调",
-                score=submission.intonation_score,
+                key="completeness",
+                label="完整度",
+                score=submission.completeness_score,
             ),
             AssessmentDimensionSchema(
                 key="stress",
@@ -128,13 +141,14 @@ class AssessmentService:
                 score=submission.stress_score,
             ),
             AssessmentDimensionSchema(
-                key="completeness",
-                label="完整度",
-                score=submission.completeness_score,
+                key="rhythm",
+                label="节奏",
+                score=submission.intonation_score,
             ),
         ]
         highlights = [
-            AssessmentHighlightSchema.model_validate(item) for item in submission.highlight_words
+            AssessmentHighlightSchema.model_validate(item)
+            for item in (submission.highlight_words or [])
         ]
         return AssessmentDetailSchema(
             id=submission.id,
@@ -142,192 +156,153 @@ class AssessmentService:
             lesson_title=lesson.title,
             lesson_text=lesson.english_text,
             translation=lesson.translation,
-            mode=submission.mode,
             duration_seconds=submission.duration_seconds,
-            transcript=submission.transcript,
-            transcript_used=submission.transcript_used,
+            recognized_text=submission.transcript or "",
             overall_score=submission.overall_score,
-            comparison_ratio=submission.comparison_ratio,
             mistake_count=submission.mistake_count,
             headline=submission.headline,
             encouragement=submission.encouragement,
-            poster_caption=submission.poster_caption,
-            poster_theme=submission.poster_theme,
             created_at=submission.created_at,
             dimensions=dimensions,
             highlights=highlights,
         )
 
-    def _evaluate_lesson(
-        self,
-        *,
-        lesson: Lesson,
-        payload: AssessmentCreateSchema,
-    ) -> dict[str, object]:
-        target_words = self._tokenize(lesson.english_text)
-        transcript_words = self._tokenize(payload.transcript or "")
-        transcript_used = bool(transcript_words)
+    def _build_rhythm_score(self, *, evaluation: OralEvaluationResult) -> int:
+        return round((evaluation.fluency_score * 0.6) + (evaluation.stress_score * 0.4))
 
-        if transcript_used:
-            comparison_ratio = SequenceMatcher(
-                None,
-                " ".join(target_words),
-                " ".join(transcript_words),
-            ).ratio()
-            completeness_ratio = min(len(transcript_words) / max(len(target_words), 1), 1.0)
-            missing_words = self._missing_words(
-                target_words=target_words,
-                transcript_words=transcript_words,
-            )
-        else:
-            duration_ratio = payload.duration_seconds / max(lesson.estimated_seconds, 1)
-            seeded_lift = self._stable_float(
-                f"{lesson.id}:{payload.duration_seconds}:{payload.mode}"
-            )
-            comparison_ratio = self._clamp(
-                0.66 + min(duration_ratio, 1.15) * 0.18 + seeded_lift * 0.08,
-                0.6,
-                0.92,
-            )
-            completeness_ratio = self._clamp(
-                0.7 + min(duration_ratio, 1.1) * 0.18 + seeded_lift * 0.06,
-                0.62,
-                0.96,
-            )
-            missing_words = self._pick_focus_words(
-                target_words,
-                count=max(2, round((1 - comparison_ratio) * 6)),
-            )
-
-        pace_gap = abs(payload.duration_seconds - lesson.estimated_seconds) / max(
-            lesson.estimated_seconds,
-            1,
-        )
-        pronunciation = round(
-            self._clamp(56 + comparison_ratio * 38 - len(missing_words) * 2, 55, 97)
-        )
-        fluency = round(
-            self._clamp(62 + (1 - min(pace_gap, 1)) * 22 + comparison_ratio * 8, 58, 96)
-        )
-        intonation = round(
-            self._clamp(
-                60 + comparison_ratio * 25 + self._stable_delta(f"{lesson.id}:intonation", 0, 6),
-                58,
-                95,
-            )
-        )
-        stress = round(
-            self._clamp(
-                59 + comparison_ratio * 24 + self._stable_delta(f"{payload.mode}:stress", 0, 5),
-                57,
-                94,
-            )
-        )
-        completeness = round(self._clamp(54 + completeness_ratio * 42, 55, 97))
-        overall_score = round(
-            pronunciation * 0.28
-            + fluency * 0.2
-            + intonation * 0.18
-            + stress * 0.14
-            + completeness * 0.2
+    def _build_highlights(self, words: list[EvaluatedWord]) -> list[dict[str, str | int]]:
+        focus_words = [word for word in words if self._needs_attention(word)]
+        ranked_words = sorted(
+            focus_words,
+            key=lambda item: (
+                self._severity_rank(item),
+                item.pronunciation_score,
+                item.fluency_score,
+            ),
         )
 
-        highlights = self._build_highlights(missing_words)
-        headline, encouragement = self._build_copy(overall_score=overall_score, lesson=lesson)
-        poster_caption = self._build_poster_caption(overall_score=overall_score, lesson=lesson)
-
-        return {
-            "transcript_used": transcript_used,
-            "comparison_ratio": round(comparison_ratio, 2),
-            "overall_score": overall_score,
-            "pronunciation": pronunciation,
-            "fluency": fluency,
-            "intonation": intonation,
-            "stress": stress,
-            "completeness": completeness,
-            "highlights": highlights,
-            "headline": headline,
-            "encouragement": encouragement,
-            "poster_caption": poster_caption,
-            "poster_theme": lesson.theme_tone,
-        }
-
-    def _missing_words(self, *, target_words: list[str], transcript_words: list[str]) -> list[str]:
-        transcript_lookup = set(transcript_words)
-        missing_words: list[str] = []
-        for word in target_words:
-            if word not in transcript_lookup and word not in missing_words:
-                missing_words.append(word)
-        if missing_words:
-            return missing_words[:3]
-        return self._pick_focus_words(target_words, count=2)
-
-    def _pick_focus_words(self, target_words: list[str], *, count: int) -> list[str]:
-        candidates = sorted(
-            {word for word in target_words if len(word) >= 5},
-            key=lambda word: (-len(word), word),
-        )
-        if not candidates:
-            return target_words[:count]
-        return candidates[:count]
-
-    def _build_highlights(self, words: list[str]) -> list[dict[str, str]]:
-        highlights: list[dict[str, str]] = []
-        severities = ["medium", "high", "low"]
-        for index, word in enumerate(words[:3]):
-            expected_ipa, observed_issue, coach_tip = WORD_COACH_LIBRARY.get(
-                word,
-                (
-                    "/custom/",
-                    "这一拍的口型和尾音还不够稳定。",
-                    "先放慢半拍，再把重音和尾辅音收干净。",
-                ),
-            )
+        highlights: list[dict[str, str | int]] = []
+        for word in ranked_words[:5]:
+            severity = self._build_severity(word)
             highlights.append(
                 {
-                    "word": word,
-                    "expected_ipa": expected_ipa,
-                    "observed_issue": observed_issue,
-                    "coach_tip": coach_tip,
-                    "severity": severities[index % len(severities)],
+                    "word": word.word or "未识别词",
+                    "expected_ipa": word.expected_ipa or "待人工复核",
+                    "observed_ipa": word.observed_ipa or "未形成有效发音",
+                    "accuracy_score": word.pronunciation_score,
+                    "observed_issue": self._build_issue(word),
+                    "coach_tip": self._build_tip(word),
+                    "severity": severity,
                 }
             )
         return highlights
 
-    def _build_copy(self, *, overall_score: int, lesson: Lesson) -> tuple[str, str]:
-        if overall_score >= 90:
-            return (
-                "这地道的节奏感，已经有点主播腔了。",
-                f"你这次的气口和层次都很稳，下一次把 {lesson.title} 再读得更松弛一点，会更高级。",
-            )
-        if overall_score >= 80:
-            return (
-                "今天的状态很在线，温柔里有力量。",
-                "整体已经顺了，挑 1 到 2 个标红词单独复练，会明显更像母语者的呼吸感。",
-            )
+    def _needs_attention(self, word: EvaluatedWord) -> bool:
+        if not word.word:
+            return False
         return (
-            "你的发音已经很有个人风格了，我们再把细节磨亮一点。",
-            "这次先别追求满分，先把标红词慢读 3 遍，再回到整句，你会发现连读自然很多。",
+            word.match_tag in {MATCH_TAG_MISSING, MATCH_TAG_MISREAD}
+            or word.pronunciation_score < 80
+            or word.stress_mismatch_count > 0
         )
 
-    def _build_poster_caption(self, *, overall_score: int, lesson: Lesson) -> str:
-        if overall_score >= 88:
-            return f"{lesson.poster_blurb} 今天的回音，像奶油色的晨光。"
-        if overall_score >= 75:
-            return f"{lesson.poster_blurb} 再练一遍，就很适合拿去发朋友圈。"
-        return f"{lesson.poster_blurb} 先把勇气说出来，分数会慢慢跟上。"
+    def _severity_rank(self, word: EvaluatedWord) -> int:
+        severity = self._build_severity(word)
+        order = {"high": 0, "medium": 1, "low": 2}
+        return order[severity]
 
-    def _tokenize(self, raw_text: str) -> list[str]:
-        return re.findall(r"[a-zA-Z']+", raw_text.lower())
+    def _build_severity(self, word: EvaluatedWord) -> str:
+        if (
+            word.match_tag in {MATCH_TAG_MISSING, MATCH_TAG_MISREAD}
+            or word.pronunciation_score < 60
+        ):
+            return "high"
+        if word.pronunciation_score < 80 or word.stress_mismatch_count > 0:
+            return "medium"
+        return "low"
 
-    def _stable_float(self, seed: str) -> float:
-        digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
-        return int(digest[:8], 16) / 0xFFFFFFFF
+    def _build_issue(self, word: EvaluatedWord) -> str:
+        if word.match_tag == MATCH_TAG_MISSING:
+            return "这一词没有被完整识别出来，句子完整度被拉低了。"
+        if word.match_tag == MATCH_TAG_MISREAD:
+            if (
+                word.expected_ipa
+                and word.observed_ipa
+                and word.expected_ipa != word.observed_ipa
+            ):
+                return f"检测到 {word.observed_ipa}，与标准 {word.expected_ipa} 有偏差。"
+            return "这一词与标准读法的匹配度偏低。"
+        if word.stress_mismatch_count > 0:
+            return "重音位置不稳定，听感会偏平。"
+        return "音素准确度偏低，需要拆词重练。"
 
-    def _stable_delta(self, seed: str, minimum: int, maximum: int) -> int:
-        span = maximum - minimum + 1
-        digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
-        return minimum + (int(digest[8:12], 16) % span)
+    def _build_tip(self, word: EvaluatedWord) -> str:
+        if word.match_tag == MATCH_TAG_MISSING:
+            return "先单独补读这一词，再回到整句做一遍完整跟读。"
+        if word.stress_mismatch_count > 0:
+            return "先找主重音音节，重读拉开后再连回整句。"
+        if word.expected_ipa:
+            return f"对照标准音素 {word.expected_ipa}，拆成慢速两遍再恢复正常语速。"
+        return "先放慢半拍，把词尾和主元音读清楚后再复练。"
 
-    def _clamp(self, value: float, minimum: float, maximum: float) -> float:
-        return max(minimum, min(maximum, value))
+    def _build_copy(
+        self,
+        *,
+        overall_score: int,
+        highlights: list[dict[str, str | int]],
+    ) -> tuple[str, str]:
+        if overall_score >= 90:
+            headline = "这一遍已经很稳了"
+        elif overall_score >= 80:
+            headline = "整体发音已经接近标准"
+        elif overall_score >= 70:
+            headline = "主要问题已经收敛到少数几个词"
+        else:
+            headline = "先把清晰度稳住，再追求自然度"
+
+        if not highlights:
+            return headline, "继续保持当前节奏，再练一遍可以进一步拉高稳定性。"
+
+        focus_word = str(highlights[0]["word"])
+        return headline, f"下一步优先处理 {focus_word}，整句得分会提升得更明显。"
+
+    def _update_user_progress(
+        self,
+        *,
+        current_user: UserProfile,
+        latest_submission: Submission | None,
+        created_at: datetime,
+        duration_seconds: int,
+        highlights: list[dict[str, str | int]],
+    ) -> None:
+        current_user.total_practices += 1
+        current_user.weekly_minutes += max(1, round(duration_seconds / 60))
+        current_user.streak_days = self._next_streak_days(
+            latest_submission=latest_submission,
+            current_streak_days=current_user.streak_days,
+            current_day=created_at.date(),
+        )
+        if highlights:
+            current_user.weak_sound = str(highlights[0]["expected_ipa"])
+
+    def _next_streak_days(
+        self,
+        *,
+        latest_submission: Submission | None,
+        current_streak_days: int,
+        current_day: date,
+    ) -> int:
+        if latest_submission is None:
+            return 1
+
+        latest_day = self._to_utc_datetime(latest_submission.created_at).date()
+        if latest_day == current_day:
+            return max(current_streak_days, 1)
+        if latest_day == current_day - timedelta(days=1):
+            return max(current_streak_days, 0) + 1
+        return 1
+
+    def _to_utc_datetime(self, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+        return value.astimezone(UTC)

@@ -30,12 +30,11 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
-      APP_NAME: EchoDaily MVP API
+      APP_NAME: EchoDaily API
       ENVIRONMENT: production
       API_V1_PREFIX: /api/v1
       DATABASE_URL: postgresql+asyncpg://echodaily:echodaily@echodaily-postgres:5432/echodaily
       CORS_ORIGINS: '["*"]'
-      WECHAT_APP_ID: wxde39405e425ea1a5
       AUTH_SESSION_DAYS: 30
     restart: unless-stopped
 

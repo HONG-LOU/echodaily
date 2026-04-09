@@ -1,7 +1,6 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/challenge/index",
     "pages/profile/index",
     "pages/practice/index",
     "pages/report/index"
@@ -22,10 +21,6 @@
       {
         "pagePath": "pages/index/index",
         "text": "回音"
-      },
-      {
-        "pagePath": "pages/challenge/index",
-        "text": "挑战"
       },
       {
         "pagePath": "pages/profile/index",

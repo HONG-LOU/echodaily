@@ -1,5 +1,5 @@
 import { fetchDashboard } from "../../utils/api";
-import type { AssessmentMode, DashboardResponse } from "../../types/api";
+import type { DashboardResponse } from "../../types/api";
 
 interface HomePageData {
   loading: boolean;
@@ -11,7 +11,6 @@ type HomePageCustom = {
   loadDashboard: () => Promise<void>;
   startPractice: (event: WechatMiniprogram.BaseEvent) => void;
   openRecentReport: (event: WechatMiniprogram.BaseEvent) => void;
-  openChallenge: () => void;
   handleRetry: () => void;
 };
 
@@ -60,7 +59,6 @@ Page<HomePageData, HomePageCustom>({
 
   startPractice(event) {
     const lessonId = String(event.currentTarget.dataset.lessonId || "");
-    const mode = String(event.currentTarget.dataset.mode || "follow") as AssessmentMode;
     if (!lessonId) {
       wx.showToast({
         title: "今日任务暂不可用",
@@ -70,7 +68,7 @@ Page<HomePageData, HomePageCustom>({
     }
 
     wx.navigateTo({
-      url: `/pages/practice/index?lessonId=${lessonId}&mode=${mode}`,
+      url: `/pages/practice/index?lessonId=${lessonId}`,
     });
   },
 
@@ -85,18 +83,12 @@ Page<HomePageData, HomePageCustom>({
     });
   },
 
-  openChallenge() {
-    wx.switchTab({
-      url: "/pages/challenge/index",
-    });
-  },
-
   handleRetry() {
     void this.loadDashboard();
   },
 
   onShareAppMessage() {
-    const lessonTitle = this.data.dashboard?.today_lesson.title || "今日回音";
+    const lessonTitle = this.data.dashboard?.today_lesson.title || "今日练习";
     return {
       title: `来和我一起读今天这句：${lessonTitle}`,
       path: "/pages/index/index",

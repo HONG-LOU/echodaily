@@ -50,7 +50,7 @@ Page<ReportPageData, ReportPageCustom>({
         loading: false,
       });
       wx.setNavigationBarTitle({
-        title: `${report.overall_score} 分回音报告`,
+        title: `${report.overall_score} 分评测报告`,
       });
       wx.nextTick(() => {
         this.drawRadar();
@@ -151,7 +151,7 @@ Page<ReportPageData, ReportPageCustom>({
       return;
     }
     wx.navigateTo({
-      url: `/pages/practice/index?lessonId=${report.lesson_id}&mode=${report.mode}`,
+      url: `/pages/practice/index?lessonId=${report.lesson_id}`,
     });
   },
 
@@ -165,20 +165,5 @@ Page<ReportPageData, ReportPageCustom>({
     if (this.assessmentId) {
       void this.loadReport(this.assessmentId);
     }
-  },
-
-  onShareAppMessage() {
-    const report = this.data.report;
-    if (!report) {
-      return {
-        title: "来看看我的每日回音报告",
-        path: "/pages/index/index",
-      };
-    }
-
-    return {
-      title: `我在 EchoDaily 拿到了 ${report.overall_score} 分`,
-      path: "/pages/index/index",
-    };
   },
 });

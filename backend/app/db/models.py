@@ -72,22 +72,6 @@ class UserProfile(Base):
     )
 
 
-class Challenge(Base):
-    __tablename__ = "challenges"
-
-    id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    title: Mapped[str] = mapped_column(String(120))
-    description: Mapped[str] = mapped_column(String(220))
-    deposit_amount: Mapped[int] = mapped_column(Integer, default=0)
-    participants: Mapped[int] = mapped_column(Integer, default=0)
-    days_total: Mapped[int] = mapped_column(Integer, default=0)
-    days_left: Mapped[int] = mapped_column(Integer, default=0)
-    score_threshold: Mapped[int] = mapped_column(Integer, default=80)
-    reward_pool: Mapped[int] = mapped_column(Integer, default=0)
-    teaser: Mapped[str] = mapped_column(String(160))
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-
-
 class Submission(Base):
     __tablename__ = "submissions"
 

@@ -2,7 +2,7 @@
   <view class="page-shell profile-page">
     <block wx:if="{{loading}}">
       <view class="glass-card">
-        <view class="empty-state">正在整理你的打卡节奏、错题本和部署入口。</view>
+        <view class="empty-state">正在整理你的练习记录和错词重点。</view>
       </view>
     </block>
 
@@ -22,59 +22,20 @@
           <view class="profile-copy">
             <text class="title-xl profile-title">{{profile.nickname}}</text>
             <text class="subtitle">{{profile.city}} · {{profile.bio}}</text>
-            <text class="profile-plan">{{profile.plan_name}}</text>
           </view>
         </view>
         <view class="chip-row">
           <text class="chip">连续 {{profile.streak_days}} 天</text>
-          <text class="chip">弱项 {{profile.weak_sound}}</text>
+          <text class="chip">重点音素 {{profile.weak_sound}}</text>
         </view>
         <view class="profile-focus">
           <view class="profile-focus__item">
-            <text class="profile-focus__label">当前主线</text>
-            <text class="profile-focus__value">{{profile.target_pack}}</text>
+            <text class="profile-focus__label">累计练习</text>
+            <text class="profile-focus__value">{{profile.total_practices}} 次</text>
           </view>
           <view class="profile-focus__item">
-            <text class="profile-focus__label">训练状态</text>
-            <text class="profile-focus__value">{{profile.pro_active ? 'Pro 已启用' : 'Free Starter'}}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="section-block">
-        <view class="stat-grid profile-stat-grid">
-          <view class="glass-card stat-card">
-            <text class="stat-label">累计练习</text>
-            <text class="stat-value">{{profile.total_practices}}</text>
-            <text class="stat-caption">次打卡</text>
-          </view>
-          <view class="glass-card stat-card">
-            <text class="stat-label">本周分钟</text>
-            <text class="stat-value">{{profile.weekly_minutes}}</text>
-            <text class="stat-caption">分碎片训练</text>
-          </view>
-          <view class="glass-card stat-card stat-card--wide">
-            <text class="stat-label">下一阶段</text>
-            <text class="stat-value profile-target">{{profile.target_pack}}</text>
-            <text class="stat-caption">继续深挖这一条主线，反馈会更稳定</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="section-block">
-        <view class="glass-card badge-card">
-          <text class="section-kicker">Milestones</text>
-          <text class="section-title">成就勋章</text>
-          <view class="badge-list">
-            <view class="badge-item" wx:for="{{profile.badges}}" wx:key="name">
-              <view class="badge-copy">
-                <text class="badge-title">{{item.name}}</text>
-                <text class="badge-desc">{{item.description}}</text>
-              </view>
-              <text class="badge-pill {{item.unlocked ? 'badge-pill--on' : 'badge-pill--off'}}">
-                {{item.unlocked ? '已点亮' : '待解锁'}}
-              </text>
-            </view>
+            <text class="profile-focus__label">本周时长</text>
+            <text class="profile-focus__value">{{profile.weekly_minutes}} 分钟</text>
           </view>
         </view>
       </view>
@@ -83,17 +44,20 @@
         <view class="glass-card notebook-card">
           <view class="section-head section-head--stack">
             <text class="section-kicker">Notebook</text>
-            <text class="section-title">错题本</text>
-            <text class="section-subtitle">把低分词条收进长期资产，后续再接导出和专项复练。</text>
+            <text class="section-title">错词记录</text>
+            <text class="section-subtitle">把最近最需要处理的词先集中修正。</text>
           </view>
-          <view class="notebook-item" wx:for="{{profile.mistake_notebook}}" wx:key="word">
-            <view>
-              <text class="notebook-word">{{item.word}}</text>
-              <text class="notebook-ipa">{{item.expected_ipa}} · {{item.lesson_title}}</text>
-              <text class="notebook-tip">{{item.coach_tip}}</text>
+          <block wx:if="{{profile.mistake_notebook.length}}">
+            <view class="notebook-item" wx:for="{{profile.mistake_notebook}}" wx:key="index">
+              <view>
+                <text class="notebook-word">{{item.word}}</text>
+                <text class="notebook-ipa">{{item.expected_ipa}} · {{item.lesson_title}}</text>
+                <text class="notebook-tip">{{item.coach_tip}}</text>
+              </view>
+              <text class="pill">{{item.score}} 分</text>
             </view>
-            <text class="pill">{{item.score}} 分</text>
-          </view>
+          </block>
+          <text class="section-subtitle" wx:else>最近的录音里还没有形成明显的错词积累。</text>
         </view>
       </view>
 
@@ -110,45 +74,10 @@
           >
             <view>
               <text class="recent-title">{{item.lesson_title}}</text>
-              <text class="recent-time">{{item.poster_caption}}</text>
+              <text class="recent-time">{{item.practiced_at}}</text>
             </view>
             <text class="pill">{{item.score}} 分</text>
           </view>
-        </view>
-      </view>
-
-      <view class="section-block">
-        <view class="glass-card growth-card">
-          <text class="section-kicker">Upgrade</text>
-          <text class="section-title">{{profile.membership_hint.title}}</text>
-          <text class="section-subtitle">{{profile.membership_hint.description}}</text>
-          <view class="bullet-list">
-            <view class="bullet-row" wx:for="{{profile.membership_hint.highlights}}" wx:key="*this">
-              <text class="bullet-dot"></text>
-              <text class="bullet-copy">{{item}}</text>
-            </view>
-          </view>
-          <view class="soft-divider"></view>
-          <text class="coach-note">{{profile.coach_cta.description}}</text>
-          <button class="secondary-button coach-button" bindtap="previewCoach">
-            {{profile.coach_cta.title}}
-          </button>
-        </view>
-      </view>
-
-      <view class="section-block">
-        <view class="glass-card deploy-card">
-          <text class="section-kicker">Developer</text>
-          <text class="section-title">快速部署配置</text>
-          <text class="section-subtitle">后端部署完后，把地址改成你的 HTTPS 域名或开发环境地址即可联调。</text>
-          <input
-            class="soft-input"
-            value="{{apiInputValue}}"
-            bindinput="onApiInput"
-            placeholder="https://your-domain.com/api/v1"
-          />
-          <text class="tip-text">当前地址：{{apiBaseUrl}}</text>
-          <button class="primary-button deploy-button" bindtap="saveBackendAddress">保存后端地址</button>
         </view>
       </view>
     </block>
