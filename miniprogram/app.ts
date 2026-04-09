@@ -25,16 +25,11 @@ App<IAppOption>({
   },
   onLaunch() {
     const envVersion = getEnvVersion();
-    const savedApiBaseUrl = normalizeApiBaseUrl(wx.getStorageSync("apiBaseUrl"));
     const defaultApiBaseUrl =
       envVersion === "develop" ? developApiBaseUrl : releaseApiBaseUrl;
 
-    if (envVersion === "develop" && savedApiBaseUrl && /^https?:\/\//.test(savedApiBaseUrl)) {
-      this.globalData.apiBaseUrl = savedApiBaseUrl;
-    } else {
-      this.globalData.apiBaseUrl = defaultApiBaseUrl;
-      wx.setStorageSync("apiBaseUrl", defaultApiBaseUrl);
-    }
+    this.globalData.apiBaseUrl = defaultApiBaseUrl;
+    wx.setStorageSync("apiBaseUrl", defaultApiBaseUrl);
 
     const savedUserId = wx.getStorageSync("userId");
     if (savedUserId && typeof savedUserId === "string") {
