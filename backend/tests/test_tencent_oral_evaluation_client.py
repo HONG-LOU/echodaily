@@ -78,7 +78,7 @@ def test_build_websocket_request_uses_signed_new_api_url() -> None:
 
     voice_id, websocket_url = client._build_websocket_request(
         reference_text="Clear is kind.",
-        audio_format="wav",
+        audio_format="mp3",
     )
 
     parsed = urlparse(websocket_url)
@@ -88,6 +88,6 @@ def test_build_websocket_request_uses_signed_new_api_url() -> None:
     assert parsed.netloc == "soe.cloud.tencent.com"
     assert parsed.path == "/soe/api/1315025902"
     assert query["voice_id"] == [voice_id]
-    assert query["voice_format"] == ["1"]
+    assert query["voice_format"] == ["2"]
     assert query["server_engine_type"] == ["16k_en"]
     assert query["signature"]

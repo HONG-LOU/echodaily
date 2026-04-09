@@ -38,7 +38,7 @@ LEGACY_VOICE_FILE_TYPE_MAP: dict[AudioFormat, int] = {
 NEW_VOICE_FORMAT_MAP: dict[AudioFormat, int] = {
     "pcm": 0,
     "wav": 1,
-    "mp3": 3,
+    "mp3": 2,
     "speex": 4,
 }
 
