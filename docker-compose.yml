@@ -1,16 +1,43 @@
 services:
+  echodaily-postgres:
+    build:
+      context: ./docker/postgres
+    container_name: echodaily-postgres
+    environment:
+      POSTGRES_DB: echodaily
+      POSTGRES_USER: echodaily
+      POSTGRES_PASSWORD: echodaily
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - echodaily-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U echodaily -d echodaily"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   echodaily-api:
     build:
       context: ./backend
     container_name: echodaily-api
+    env_file:
+      - ./backend/.env
+    depends_on:
+      echodaily-postgres:
+        condition: service_healthy
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       APP_NAME: EchoDaily MVP API
       ENVIRONMENT: production
       API_V1_PREFIX: /api/v1
-      DATABASE_URL: sqlite+aiosqlite:///./data/echodaily.db
-      CORS_ORIGINS: "*"
-    volumes:
-      - ./backend/data:/app/data
+      DATABASE_URL: postgresql+asyncpg://echodaily:echodaily@echodaily-postgres:5432/echodaily
+      CORS_ORIGINS: '["*"]'
+      WECHAT_APP_ID: wxde39405e425ea1a5
+      AUTH_SESSION_DAYS: 30
     restart: unless-stopped
+
+volumes:
+  echodaily-postgres-data:

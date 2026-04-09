@@ -10,6 +10,10 @@ class Base(DeclarativeBase):
     pass
 
 
+def utcnow() -> datetime:
+    return datetime.now(UTC)
+
+
 class Lesson(Base):
     __tablename__ = "lessons"
 
@@ -34,8 +38,21 @@ class UserProfile(Base):
     __tablename__ = "user_profiles"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    wechat_openid: Mapped[str | None] = mapped_column(
+        String(128),
+        unique=True,
+        index=True,
+        nullable=True,
+    )
+    wechat_unionid: Mapped[str | None] = mapped_column(
+        String(128),
+        unique=True,
+        index=True,
+        nullable=True,
+    )
     nickname: Mapped[str] = mapped_column(String(80))
     avatar_symbol: Mapped[str] = mapped_column(String(8))
+    avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     streak_days: Mapped[int] = mapped_column(Integer, default=0)
     total_practices: Mapped[int] = mapped_column(Integer, default=0)
     weekly_minutes: Mapped[int] = mapped_column(Integer, default=0)
@@ -46,6 +63,13 @@ class UserProfile(Base):
     focus_tag: Mapped[str] = mapped_column(String(80))
     city: Mapped[str] = mapped_column(String(80))
     bio: Mapped[str] = mapped_column(String(160))
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+        onupdate=utcnow,
+    )
 
 
 class Challenge(Base):
@@ -88,6 +112,16 @@ class Submission(Base):
     poster_caption: Mapped[str] = mapped_column(String(180))
     poster_theme: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=utcnow,
     )
+
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("user_profiles.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

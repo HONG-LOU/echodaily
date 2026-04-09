@@ -1,4 +1,4 @@
-import { createAssessment, fetchLesson, getDefaultUserId } from "../../utils/api";
+import { createAssessment, fetchLesson } from "../../utils/api";
 import type { AssessmentMode, Lesson } from "../../types/api";
 
 interface PracticePageData {
@@ -226,7 +226,6 @@ Page<PracticePageData, PracticePageCustom>({
 
     try {
       const report = await createAssessment({
-        user_id: getDefaultUserId(),
         lesson_id: lesson.id,
         mode,
         duration_seconds: recordedDuration || lesson.estimated_seconds,

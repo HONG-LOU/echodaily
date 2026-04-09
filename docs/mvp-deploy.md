@@ -25,10 +25,18 @@ docker compose up -d --build
 
 当前部署方式是：
 
+- Docker 内运行 `PostgreSQL 16`
 - 容器内 FastAPI 监听 `8000`
-- `docker-compose` 只绑定 `127.0.0.1:8000`
+- `docker-compose` 绑定 `127.0.0.1:8000` 和 `127.0.0.1:5432`
 - 主机 Nginx 监听 `80`
 - Nginx 反向代理到 `127.0.0.1:8000`
+
+首次启用微信登录前，需要在启动命令所在的 shell 中提供：
+
+```bash
+export WECHAT_APP_SECRET=你的小程序AppSecret
+docker compose up -d --build
+```
 
 ## 3. 小程序联调
 
@@ -61,6 +69,6 @@ https://template-chat.xyz/api/v1
 ## 5. 当前 MVP 范围
 
 - 已完成：首页、练习、报告、挑战、我的五个页面闭环。
-- 已完成：FastAPI 后端、种子数据、模拟评测、挑战与个人中心接口。
-- 已完成：Dockerfile、docker-compose、SQLite 持久化目录。
+- 已完成：FastAPI 后端、微信登录、真实用户会话、挑战与个人中心接口。
+- 已完成：Dockerfile、docker-compose、PostgreSQL 持久化目录。
 - 当前评测为 MVP 模拟服务，后续可在后端 `AssessmentService` 中替换为真实 ASR / 语音评分能力。

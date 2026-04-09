@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import NotFoundError
+from app.db.models import UserProfile
 from app.repositories.assessment_repository import AssessmentRepository
-from app.repositories.user_repository import UserRepository
 from app.schemas.profile import (
     BadgeSchema,
     MistakeNotebookEntrySchema,
@@ -16,32 +15,31 @@ from app.schemas.profile import (
 class ProfileService:
     def __init__(
         self,
-        user_repository: UserRepository,
         assessment_repository: AssessmentRepository,
     ) -> None:
-        self.user_repository = user_repository
         self.assessment_repository = assessment_repository
 
-    async def get_profile(self, session: AsyncSession, *, user_id: str) -> ProfileResponseSchema:
-        user = await self.user_repository.get_by_id(session, user_id)
-        if user is None:
-            raise NotFoundError("User not found.", code="user_not_found")
-
+    async def get_profile(
+        self,
+        session: AsyncSession,
+        *,
+        current_user: UserProfile,
+    ) -> ProfileResponseSchema:
         recent_submissions = await self.assessment_repository.list_recent_by_user(
             session,
-            user_id,
+            current_user.id,
             limit=6,
         )
         badges = [
             BadgeSchema(
                 name="初试啼声",
                 description="连续打卡 7 天解锁",
-                unlocked=user.streak_days >= 7,
+                unlocked=current_user.streak_days >= 7,
             ),
             BadgeSchema(
                 name="音标终结者",
                 description="累计纠错 100 词解锁",
-                unlocked=user.total_practices >= 30,
+                unlocked=current_user.total_practices >= 30,
             ),
             BadgeSchema(name="晨光俱乐部", description="加入一次 21 天挑战营", unlocked=True),
         ]
@@ -73,17 +71,19 @@ class ProfileService:
         ]
 
         return ProfileResponseSchema(
-            nickname=user.nickname,
-            avatar_symbol=user.avatar_symbol,
-            city=user.city,
-            bio=user.bio,
-            streak_days=user.streak_days,
-            total_practices=user.total_practices,
-            weekly_minutes=user.weekly_minutes,
-            weak_sound=user.weak_sound,
-            target_pack=user.target_pack,
-            plan_name=user.plan_name,
-            pro_active=user.pro_active,
+            id=current_user.id,
+            nickname=current_user.nickname,
+            avatar_symbol=current_user.avatar_symbol,
+            avatar_url=current_user.avatar_url,
+            city=current_user.city,
+            bio=current_user.bio,
+            streak_days=current_user.streak_days,
+            total_practices=current_user.total_practices,
+            weekly_minutes=current_user.weekly_minutes,
+            weak_sound=current_user.weak_sound,
+            target_pack=current_user.target_pack,
+            plan_name=current_user.plan_name,
+            pro_active=current_user.pro_active,
             badges=badges,
             mistake_notebook=notebook[:4],
             recent_practices=recent_practices,

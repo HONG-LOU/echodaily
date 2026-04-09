@@ -24,7 +24,9 @@ function getEnvVersion(): "develop" | "trial" | "release" {
 App<IAppOption>({
   globalData: {
     apiBaseUrl: defaultApiBaseUrl,
-    userId: "demo-user",
+    userId: "",
+    accessToken: "",
+    tokenExpiresAt: "",
     lastAssessmentId: "",
   },
   onLaunch() {
@@ -48,10 +50,18 @@ App<IAppOption>({
     }
 
     const savedUserId = wx.getStorageSync("userId");
-    if (savedUserId) {
+    if (savedUserId && typeof savedUserId === "string") {
       this.globalData.userId = savedUserId;
-    } else {
-      wx.setStorageSync("userId", this.globalData.userId);
+    }
+
+    const savedAccessToken = wx.getStorageSync("accessToken");
+    if (savedAccessToken && typeof savedAccessToken === "string") {
+      this.globalData.accessToken = savedAccessToken;
+    }
+
+    const savedTokenExpiresAt = wx.getStorageSync("tokenExpiresAt");
+    if (savedTokenExpiresAt && typeof savedTokenExpiresAt === "string") {
+      this.globalData.tokenExpiresAt = savedTokenExpiresAt;
     }
 
     wx.showShareMenu({

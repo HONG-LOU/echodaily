@@ -4,6 +4,7 @@ export interface DashboardUser {
   id: string;
   nickname: string;
   avatar_symbol: string;
+  avatar_url: string | null;
   streak_days: number;
   total_practices: number;
   weekly_minutes: number;
@@ -128,7 +129,6 @@ export interface AssessmentDetail {
 }
 
 export interface AssessmentCreatePayload {
-  user_id: string;
   lesson_id: string;
   mode: AssessmentMode;
   duration_seconds: number;
@@ -158,8 +158,10 @@ export interface RecentPractice {
 }
 
 export interface ProfileResponse {
+  id: string;
   nickname: string;
   avatar_symbol: string;
+  avatar_url: string | null;
   city: string;
   bio: string;
   streak_days: number;
@@ -182,4 +184,23 @@ export interface ProfileResponse {
     description: string;
     highlights: string[];
   };
+}
+
+export interface AuthenticatedUser {
+  id: string;
+  nickname: string;
+  avatar_symbol: string;
+  avatar_url: string | null;
+  city: string;
+  bio: string;
+  plan_name: string;
+  pro_active: boolean;
+}
+
+export interface WechatLoginResponse {
+  access_token: string;
+  token_type: "Bearer";
+  expires_at: string;
+  is_new_user: boolean;
+  user: AuthenticatedUser;
 }

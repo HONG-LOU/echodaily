@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Challenge, Lesson, Submission, UserProfile
+from app.db.models import Challenge, Lesson
 
 LESSON_SEEDS = [
     Lesson(
@@ -62,25 +62,6 @@ LESSON_SEEDS = [
 ]
 
 
-USER_SEEDS = [
-    UserProfile(
-        id="demo-user",
-        nickname="Mia",
-        avatar_symbol="M",
-        streak_days=6,
-        total_practices=18,
-        weekly_minutes=46,
-        pro_active=False,
-        plan_name="Free Starter",
-        weak_sound="/θ/",
-        target_pack="经典电影台词",
-        focus_tag="暖调跟读",
-        city="Shanghai",
-        bio="每天 30 秒，把英语练得更柔和一点。",
-    ),
-]
-
-
 CHALLENGE_SEEDS = [
     Challenge(
         id="challenge-21-sunrise",
@@ -111,86 +92,11 @@ CHALLENGE_SEEDS = [
 ]
 
 
-SUBMISSION_SEEDS = [
-    Submission(
-        id="seed-submission-1",
-        user_id="demo-user",
-        lesson_id="lesson-bbc-morning",
-        mode="follow",
-        duration_seconds=19,
-        transcript="Today is a quiet beginning, but brave choices still change everything.",
-        transcript_used=True,
-        comparison_ratio=0.94,
-        overall_score=88,
-        pronunciation_score=86,
-        fluency_score=90,
-        intonation_score=87,
-        stress_score=84,
-        completeness_score=92,
-        mistake_count=2,
-        highlight_words=[
-            {
-                "word": "quiet",
-                "expected_ipa": "/ˈkwaɪət/",
-                "observed_issue": "中间的双元音收得太快。",
-                "coach_tip": "把 /kwaɪ/ 拉开，再轻轻落到 /ət/。",
-                "severity": "medium",
-            },
-            {
-                "word": "choices",
-                "expected_ipa": "/ˈtʃɔɪsɪz/",
-                "observed_issue": "尾音 /ɪz/ 略弱。",
-                "coach_tip": "结尾再带一点气流，别直接收死。",
-                "severity": "low",
-            },
-        ],
-        headline="今天的节奏很稳，已经有晨间播报感了。",
-        encouragement="你的跟读很顺，下一次把 quiet 的开口再放松一点，会更自然。",
-        poster_caption="今天也把英语说得很温柔。",
-        poster_theme="cream-sky",
-        created_at=datetime(2026, 4, 6, 8, 10, 0),
-    ),
-    Submission(
-        id="seed-submission-2",
-        user_id="demo-user",
-        lesson_id="lesson-movie-whisper",
-        mode="blind_box",
-        duration_seconds=23,
-        transcript=None,
-        transcript_used=False,
-        comparison_ratio=0.79,
-        overall_score=81,
-        pronunciation_score=80,
-        fluency_score=83,
-        intonation_score=82,
-        stress_score=78,
-        completeness_score=80,
-        mistake_count=1,
-        highlight_words=[
-            {
-                "word": "softly",
-                "expected_ipa": "/ˈsɒftli/",
-                "observed_issue": "soft 的 /f/ 不够清晰。",
-                "coach_tip": "上齿轻碰下唇，把气流送出去。",
-                "severity": "medium",
-            },
-        ],
-        headline="这句已经很有电影感了，情绪铺得很好。",
-        encouragement="盲盒模式下还能稳住语调很不错，下一次把 courage 的重音再抬高一点。",
-        poster_caption="温柔不是退让，是更高级的勇气。",
-        poster_theme="peach-rose",
-        created_at=datetime(2026, 4, 8, 22, 0, 0),
-    ),
-]
-
-
 async def seed_database(session: AsyncSession) -> None:
     lesson_count = await session.scalar(select(func.count()).select_from(Lesson))
     if lesson_count:
         return
 
     session.add_all(LESSON_SEEDS)
-    session.add_all(USER_SEEDS)
     session.add_all(CHALLENGE_SEEDS)
-    session.add_all(SUBMISSION_SEEDS)
     await session.commit()

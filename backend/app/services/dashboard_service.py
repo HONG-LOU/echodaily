@@ -5,10 +5,10 @@ from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError
+from app.db.models import UserProfile
 from app.repositories.assessment_repository import AssessmentRepository
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.lesson_repository import LessonRepository
-from app.repositories.user_repository import UserRepository
 from app.schemas.dashboard import (
     DashboardResponseSchema,
     DashboardUserSchema,
@@ -23,12 +23,10 @@ from app.schemas.dashboard import (
 class DashboardService:
     def __init__(
         self,
-        user_repository: UserRepository,
         lesson_repository: LessonRepository,
         challenge_repository: ChallengeRepository,
         assessment_repository: AssessmentRepository,
     ) -> None:
-        self.user_repository = user_repository
         self.lesson_repository = lesson_repository
         self.challenge_repository = challenge_repository
         self.assessment_repository = assessment_repository
@@ -37,13 +35,9 @@ class DashboardService:
         self,
         session: AsyncSession,
         *,
-        user_id: str,
+        current_user: UserProfile,
         current_day: date,
     ) -> DashboardResponseSchema:
-        user = await self.user_repository.get_by_id(session, user_id)
-        if user is None:
-            raise NotFoundError("User not found.", code="user_not_found")
-
         lesson = await self.lesson_repository.get_today(session, current_day=current_day)
         if lesson is None:
             raise NotFoundError("No lesson available yet.", code="lesson_not_found")
@@ -52,24 +46,29 @@ class DashboardService:
         challenge = challenges[0] if challenges else None
         recent_submissions = await self.assessment_repository.list_recent_by_user(
             session,
-            user_id,
+            current_user.id,
             limit=3,
         )
+        remaining_days_for_badge = max(0, 7 - current_user.streak_days)
 
         quick_stats = [
             StatCardSchema(
                 label="连续打卡",
-                value=f"{user.streak_days} 天",
-                caption="离“初试啼声”徽章还差 1 天",
+                value=f"{current_user.streak_days} 天",
+                caption=(
+                    "已解锁“初试啼声”徽章"
+                    if remaining_days_for_badge == 0
+                    else f"离“初试啼声”徽章还差 {remaining_days_for_badge} 天"
+                ),
             ),
             StatCardSchema(
                 label="本周练习",
-                value=f"{user.weekly_minutes} 分钟",
+                value=f"{current_user.weekly_minutes} 分钟",
                 caption="碎片化练习也能积累质感",
             ),
             StatCardSchema(
                 label="弱项音标",
-                value=user.weak_sound,
+                value=current_user.weak_sound,
                 caption="今天建议盯住这一个细节",
             ),
         ]
@@ -127,7 +126,7 @@ class DashboardService:
         )
 
         return DashboardResponseSchema(
-            user=DashboardUserSchema.model_validate(user),
+            user=DashboardUserSchema.model_validate(current_user),
             today_lesson=LessonSpotlightSchema.model_validate(lesson),
             quick_stats=quick_stats,
             challenge_spotlight=challenge_spotlight,

@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     database_url: str = "sqlite+aiosqlite:///./data/echodaily.db"
     cors_origins: list[str] = Field(default_factory=lambda: ["*"])
+    wechat_app_id: str | None = None
+    wechat_app_secret: str | None = None
+    auth_session_days: int = Field(default=30, ge=1, le=365)
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -31,6 +34,14 @@ class Settings(BaseSettings):
                 return ["*"]
             return [item.strip() for item in stripped.split(",") if item.strip()]
         raise TypeError("CORS_ORIGINS must be a string or a list of strings.")
+
+    @field_validator("wechat_app_id", "wechat_app_secret", mode="before")
+    @classmethod
+    def normalize_optional_secret(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        stripped = str(value).strip()
+        return stripped or None
 
 
 @lru_cache

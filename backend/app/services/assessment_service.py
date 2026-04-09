@@ -9,10 +9,9 @@ from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError
-from app.db.models import Lesson, Submission
+from app.db.models import Lesson, Submission, UserProfile
 from app.repositories.assessment_repository import AssessmentRepository
 from app.repositories.lesson_repository import LessonRepository
-from app.repositories.user_repository import UserRepository
 from app.schemas.assessment import (
     AssessmentCreateSchema,
     AssessmentDetailSchema,
@@ -39,29 +38,24 @@ class AssessmentService:
         self,
         assessment_repository: AssessmentRepository,
         lesson_repository: LessonRepository,
-        user_repository: UserRepository,
     ) -> None:
         self.assessment_repository = assessment_repository
         self.lesson_repository = lesson_repository
-        self.user_repository = user_repository
 
     async def create_assessment(
         self,
         session: AsyncSession,
+        current_user: UserProfile,
         payload: AssessmentCreateSchema,
     ) -> AssessmentDetailSchema:
         lesson = await self.lesson_repository.get_by_id(session, payload.lesson_id)
         if lesson is None:
             raise NotFoundError("Lesson not found.", code="lesson_not_found")
 
-        user = await self.user_repository.get_by_id(session, payload.user_id)
-        if user is None:
-            raise NotFoundError("User not found.", code="user_not_found")
-
         result = self._evaluate_lesson(lesson=lesson, payload=payload)
         submission = Submission(
             id=f"assessment-{uuid4().hex[:16]}",
-            user_id=payload.user_id,
+            user_id=current_user.id,
             lesson_id=lesson.id,
             mode=payload.mode,
             duration_seconds=payload.duration_seconds,
@@ -83,18 +77,21 @@ class AssessmentService:
             created_at=datetime.now(UTC),
         )
         await self.assessment_repository.add(session, submission)
-        user.total_practices += 1
-        user.weekly_minutes += max(1, round(payload.duration_seconds / 60))
+        current_user.total_practices += 1
+        current_user.weekly_minutes += max(1, round(payload.duration_seconds / 60))
         await session.commit()
         return self._build_detail_schema(submission=submission, lesson=lesson)
 
     async def get_assessment(
         self,
         session: AsyncSession,
+        current_user: UserProfile,
         assessment_id: str,
     ) -> AssessmentDetailSchema:
         submission = await self.assessment_repository.get_by_id(session, assessment_id)
         if submission is None:
+            raise NotFoundError("Assessment not found.", code="assessment_not_found")
+        if submission.user_id != current_user.id:
             raise NotFoundError("Assessment not found.", code="assessment_not_found")
 
         lesson = await self.lesson_repository.get_by_id(session, submission.lesson_id)

@@ -33,7 +33,11 @@ def _ensure_sqlite_directory() -> None:
 def get_engine() -> AsyncEngine:
     _ensure_sqlite_directory()
     settings = get_settings()
-    return create_async_engine(settings.database_url, future=True)
+    return create_async_engine(
+        settings.database_url,
+        future=True,
+        pool_pre_ping=True,
+    )
 
 
 @lru_cache

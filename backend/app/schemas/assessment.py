@@ -7,7 +7,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class AssessmentCreateSchema(BaseModel):
-    user_id: str = Field(default="demo-user", min_length=1, max_length=64)
     lesson_id: str = Field(min_length=1, max_length=64)
     mode: Literal["follow", "blind_box"]
     duration_seconds: int = Field(ge=5, le=300)

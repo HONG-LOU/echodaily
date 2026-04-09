@@ -5,6 +5,7 @@ class DashboardUserSchema(BaseModel):
     id: str
     nickname: str
     avatar_symbol: str
+    avatar_url: str | None
     streak_days: int
     total_practices: int
     weekly_minutes: int
