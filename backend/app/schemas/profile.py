@@ -33,5 +33,6 @@ class ProfileResponseSchema(BaseModel):
     weak_sound: str
     mistake_notebook: list[MistakeNotebookEntrySchema]
     recent_practices: list[RecentPracticeSchema]
+    check_in_dates: list[str]
 
     model_config = ConfigDict(from_attributes=True)

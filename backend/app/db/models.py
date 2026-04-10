@@ -29,6 +29,7 @@ class Lesson(Base):
     tags: Mapped[list[str]] = mapped_column(JSON)
     difficulty: Mapped[str] = mapped_column(String(32))
     estimated_seconds: Mapped[int] = mapped_column(Integer)
+    audio_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     poster_blurb: Mapped[str] = mapped_column(String(160))
     theme_tone: Mapped[str] = mapped_column(String(32))
     published_on: Mapped[date] = mapped_column(Date, index=True)

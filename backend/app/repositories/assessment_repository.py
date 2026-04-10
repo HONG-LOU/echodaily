@@ -62,3 +62,20 @@ class AssessmentRepository:
         )
         value = await session.scalar(statement)
         return int(value or 0)
+
+    async def get_check_in_dates_by_user_since(
+        self,
+        session: AsyncSession,
+        user_id: str,
+        *,
+        start_time: datetime,
+    ) -> list[str]:
+        statement = (
+            select(func.distinct(func.date(Submission.created_at)))
+            .where(Submission.user_id == user_id)
+            .where(Submission.created_at >= start_time)
+            .order_by(func.date(Submission.created_at).desc())
+        )
+        result = await session.scalars(statement)
+        # Convert date objects to YYYY-MM-DD string format
+        return [str(d) for d in result.all() if d]

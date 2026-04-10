@@ -233,6 +233,10 @@ export function fetchLesson(lessonId: string): Promise<Lesson> {
   return request<Lesson>(`/lessons/${lessonId}`);
 }
 
+export function fetchRecentLessons(): Promise<Lesson[]> {
+  return request<Lesson[]>("/lessons/recent");
+}
+
 export function createAssessment(payload: AssessmentCreatePayload): Promise<AssessmentDetail> {
   return request<AssessmentDetail>("/assessments", {
     method: "POST",

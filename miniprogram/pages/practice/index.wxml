@@ -30,6 +30,9 @@
         <view class="script-section">
           <text class="script-english">{{lesson.english_text}}</text>
           <text class="script-translation">{{lesson.translation}}</text>
+          <view class="audio-action" wx:if="{{lesson.audio_url}}">
+            <button class="mini-button" bindtap="playOriginalAudio">{{playingOriginal ? '停止原声' : '播放原声'}}</button>
+          </view>
         </view>
 
         <view class="chip-row">

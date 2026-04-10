@@ -29,6 +29,7 @@ export interface Lesson {
   tags: string[];
   difficulty: string;
   estimated_seconds: number;
+  audio_url: string | null;
   theme_tone: string;
 }
 
@@ -115,6 +116,7 @@ export interface ProfileResponse {
   weak_sound: string;
   mistake_notebook: MistakeNotebookEntry[];
   recent_practices: RecentPractice[];
+  check_in_dates: string[];
 }
 
 export interface AuthenticatedUser {

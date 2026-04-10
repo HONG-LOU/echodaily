@@ -9,15 +9,18 @@ interface PracticePageData {
   recordedDuration: number;
   tempFilePath: string;
   submitting: boolean;
+  playingOriginal: boolean;
 }
 
 type PracticePageCustom = {
   lessonId: string;
   recorderManager: WechatMiniprogram.RecorderManager | null;
   audioContext: WechatMiniprogram.InnerAudioContext | null;
+  ttsAudioContext: WechatMiniprogram.InnerAudioContext | null;
   loadLesson: (lessonId: string) => Promise<void>;
   setupRecorder: () => void;
   previewHint: () => void;
+  playOriginalAudio: () => void;
   startRecording: () => void;
   stopRecording: () => void;
   playRecording: () => void;
@@ -35,10 +38,12 @@ Page<PracticePageData, PracticePageCustom>({
     recordedDuration: 0,
     tempFilePath: "",
     submitting: false,
+    playingOriginal: false,
   },
 
   recorderManager: null,
   audioContext: null,
+  ttsAudioContext: null,
   lessonId: "",
 
   onLoad(query) {
@@ -59,6 +64,8 @@ Page<PracticePageData, PracticePageCustom>({
   onUnload() {
     this.audioContext?.stop();
     this.audioContext?.destroy();
+    this.ttsAudioContext?.stop();
+    this.ttsAudioContext?.destroy();
   },
 
   async loadLesson(lessonId) {
@@ -128,6 +135,41 @@ Page<PracticePageData, PracticePageCustom>({
       showCancel: false,
       confirmText: "知道了",
     });
+  },
+
+  playOriginalAudio() {
+    const lesson = this.data.lesson;
+    if (!lesson || !lesson.audio_url) {
+      wx.showToast({
+        title: "暂无原声",
+        icon: "none",
+      });
+      return;
+    }
+
+    if (this.data.playingOriginal) {
+      this.ttsAudioContext?.stop();
+      this.setData({ playingOriginal: false });
+      return;
+    }
+
+    if (!this.ttsAudioContext) {
+      this.ttsAudioContext = wx.createInnerAudioContext();
+      this.ttsAudioContext.onEnded(() => {
+        this.setData({ playingOriginal: false });
+      });
+      this.ttsAudioContext.onError(() => {
+        this.setData({ playingOriginal: false });
+        wx.showToast({
+          title: "原声播放失败",
+          icon: "none",
+        });
+      });
+    }
+
+    this.ttsAudioContext.src = lesson.audio_url;
+    this.ttsAudioContext.play();
+    this.setData({ playingOriginal: true });
   },
 
   startRecording() {

@@ -8,12 +8,16 @@ interface ProfilePageData {
   topMistake: MistakeNotebookEntry | null;
   latestPractice: RecentPractice | null;
   secondPractice: RecentPractice | null;
+  calendarDays: { date: string; active: boolean }[];
+  showPoster: boolean;
 }
 
 type ProfilePageCustom = {
   loadProfile: () => Promise<void>;
   openRecentReport: (event: WechatMiniprogram.BaseEvent) => void;
   handleRetry: () => void;
+  openPoster: () => void;
+  closePoster: () => void;
 };
 
 Page<ProfilePageData, ProfilePageCustom>({
@@ -24,6 +28,8 @@ Page<ProfilePageData, ProfilePageCustom>({
     topMistake: null,
     latestPractice: null,
     secondPractice: null,
+    calendarDays: [],
+    showPoster: false,
   },
 
   onLoad() {
@@ -44,11 +50,26 @@ Page<ProfilePageData, ProfilePageCustom>({
 
     try {
       const profile = await fetchProfile();
+      
+      // Generate calendar days (last 30 days)
+      const calendarDays = [];
+      const today = new Date();
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        calendarDays.push({
+          date: dateStr,
+          active: profile.check_in_dates.includes(dateStr)
+        });
+      }
+
       this.setData({
         profile,
         topMistake: profile.mistake_notebook[0] || null,
         latestPractice: profile.recent_practices[0] || null,
         secondPractice: profile.recent_practices[1] || null,
+        calendarDays,
         loading: false,
       });
     } catch (error) {
@@ -58,6 +79,7 @@ Page<ProfilePageData, ProfilePageCustom>({
         topMistake: null,
         latestPractice: null,
         secondPractice: null,
+        calendarDays: [],
         loading: false,
       });
     }
@@ -76,4 +98,12 @@ Page<ProfilePageData, ProfilePageCustom>({
   handleRetry() {
     void this.loadProfile();
   },
+
+  openPoster() {
+    this.setData({ showPoster: true });
+  },
+
+  closePoster() {
+    this.setData({ showPoster: false });
+  }
 });

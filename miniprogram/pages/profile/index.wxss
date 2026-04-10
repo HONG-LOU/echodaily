@@ -122,6 +122,36 @@
   margin-top: auto;
 }
 
+.calendar-card {
+  padding: 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calendar-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.calendar-cell {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 4rpx;
+  background: var(--surface-soft);
+}
+
+.calendar-cell.active {
+  background: var(--brand-primary);
+}
+
 .history-card {
   flex: 1;
   padding: 32rpx;

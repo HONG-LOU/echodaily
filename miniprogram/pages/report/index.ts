@@ -6,6 +6,7 @@ interface ReportPageData {
   errorMessage: string;
   report: AssessmentDetail | null;
   primaryHighlights: AssessmentHighlight[];
+  showPoster: boolean;
 }
 
 type ReportPageCustom = {
@@ -14,6 +15,8 @@ type ReportPageCustom = {
   goPracticeAgain: () => void;
   goHome: () => void;
   handleRetry: () => void;
+  openPoster: () => void;
+  closePoster: () => void;
 };
 
 Page<ReportPageData, ReportPageCustom>({
@@ -22,6 +25,7 @@ Page<ReportPageData, ReportPageCustom>({
     errorMessage: "",
     report: null,
     primaryHighlights: [],
+    showPoster: false,
   },
 
   assessmentId: "",
@@ -78,6 +82,14 @@ Page<ReportPageData, ReportPageCustom>({
     wx.switchTab({
       url: "/pages/index/index",
     });
+  },
+
+  openPoster() {
+    this.setData({ showPoster: true });
+  },
+
+  closePoster() {
+    this.setData({ showPoster: false });
   },
 
   handleRetry() {

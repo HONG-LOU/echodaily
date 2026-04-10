@@ -40,6 +40,12 @@ class ProfileService:
             0 if weekly_duration_seconds == 0 else max(1, round(weekly_duration_seconds / 60))
         )
 
+        check_in_dates = await self.assessment_repository.get_check_in_dates_by_user_since(
+            session,
+            current_user.id,
+            start_time=datetime.now(UTC) - timedelta(days=60),
+        )
+
         notebook: list[MistakeNotebookEntrySchema] = []
         for submission in recent_submissions:
             for highlight in (submission.highlight_words or [])[:2]:
@@ -78,4 +84,5 @@ class ProfileService:
             weak_sound=current_user.weak_sound,
             mistake_notebook=notebook[:6],
             recent_practices=recent_practices,
+            check_in_dates=check_in_dates,
         )

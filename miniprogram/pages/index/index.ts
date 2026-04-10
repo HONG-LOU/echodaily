@@ -1,16 +1,22 @@
-import { fetchDashboard } from "../../utils/api";
-import type { DashboardResponse, RecentScore } from "../../types/api";
+import { fetchDashboard, fetchRecentLessons } from "../../utils/api";
+import type { DashboardResponse, RecentScore, Lesson } from "../../types/api";
 
 interface HomePageData {
   loading: boolean;
   errorMessage: string;
   dashboard: DashboardResponse | null;
   latestScore: RecentScore | null;
+  playingOriginal: boolean;
+  recentLessons: Lesson[];
+  currentLessonIndex: number;
 }
 
 type HomePageCustom = {
+  ttsAudioContext: WechatMiniprogram.InnerAudioContext | null;
   loadDashboard: () => Promise<void>;
+  playOriginalAudio: () => void;
   startPractice: (event: WechatMiniprogram.BaseEvent) => void;
+  onSwiperChange: (event: WechatMiniprogram.SwiperChange) => void;
   openRecentReport: (event: WechatMiniprogram.BaseEvent) => void;
   handleRetry: () => void;
 };
@@ -21,7 +27,12 @@ Page<HomePageData, HomePageCustom>({
     errorMessage: "",
     dashboard: null,
     latestScore: null,
+    playingOriginal: false,
+    recentLessons: [],
+    currentLessonIndex: 0,
   },
+
+  ttsAudioContext: null,
 
   onLoad() {
     void this.loadDashboard();
@@ -31,6 +42,16 @@ Page<HomePageData, HomePageCustom>({
     if (this.data.dashboard) {
       void this.loadDashboard();
     }
+  },
+
+  onHide() {
+    this.ttsAudioContext?.stop();
+    this.setData({ playingOriginal: false });
+  },
+
+  onUnload() {
+    this.ttsAudioContext?.stop();
+    this.ttsAudioContext?.destroy();
   },
 
   async onPullDownRefresh() {
@@ -45,9 +66,14 @@ Page<HomePageData, HomePageCustom>({
     });
 
     try {
-      const dashboard = await fetchDashboard();
+      const [dashboard, recentLessons] = await Promise.all([
+        fetchDashboard(),
+        fetchRecentLessons(),
+      ]);
       this.setData({
         dashboard,
+        recentLessons,
+        currentLessonIndex: 0,
         latestScore: dashboard.recent_scores[0] || null,
         loading: false,
       });
@@ -58,6 +84,51 @@ Page<HomePageData, HomePageCustom>({
         latestScore: null,
         loading: false,
       });
+    }
+  },
+
+  playOriginalAudio() {
+    const lesson = this.data.recentLessons[this.data.currentLessonIndex] || this.data.dashboard?.today_lesson;
+    if (!lesson || !lesson.audio_url) {
+      wx.showToast({
+        title: "暂无原声",
+        icon: "none",
+      });
+      return;
+    }
+
+    if (this.data.playingOriginal) {
+      this.ttsAudioContext?.stop();
+      this.setData({ playingOriginal: false });
+      return;
+    }
+
+    if (!this.ttsAudioContext) {
+      this.ttsAudioContext = wx.createInnerAudioContext();
+      this.ttsAudioContext.onEnded(() => {
+        this.setData({ playingOriginal: false });
+      });
+      this.ttsAudioContext.onError(() => {
+        this.setData({ playingOriginal: false });
+        wx.showToast({
+          title: "原声播放失败",
+          icon: "none",
+        });
+      });
+    }
+
+    this.ttsAudioContext.src = lesson.audio_url;
+    this.ttsAudioContext.play();
+    this.setData({ playingOriginal: true });
+  },
+
+  onSwiperChange(event) {
+    this.setData({
+      currentLessonIndex: event.detail.current,
+    });
+    if (this.data.playingOriginal) {
+      this.ttsAudioContext?.stop();
+      this.setData({ playingOriginal: false });
     }
   },
 
@@ -92,7 +163,7 @@ Page<HomePageData, HomePageCustom>({
   },
 
   onShareAppMessage() {
-    const lessonTitle = this.data.dashboard?.today_lesson.title || "今日练习";
+    const lessonTitle = this.data.recentLessons[this.data.currentLessonIndex]?.title || this.data.dashboard?.today_lesson.title || "今日练习";
     return {
       title: `来和我一起读今天这句：${lessonTitle}`,
       path: "/pages/index/index",

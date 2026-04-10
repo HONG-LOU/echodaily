@@ -17,6 +17,12 @@ async def get_today_lesson(session: DbSession) -> LessonResponseSchema:
     return LessonResponseSchema.model_validate(lesson)
 
 
+@router.get("/recent", response_model=list[LessonResponseSchema])
+async def get_recent_lessons(session: DbSession) -> list[LessonResponseSchema]:
+    lessons = await lesson_repository.list_recent(session, current_day=date.today(), limit=7)
+    return [LessonResponseSchema.model_validate(lesson) for lesson in lessons]
+
+
 @router.get("/{lesson_id}", response_model=LessonResponseSchema)
 async def get_lesson(lesson_id: str, session: DbSession) -> LessonResponseSchema:
     lesson = await lesson_repository.get_by_id(session, lesson_id)

@@ -105,8 +105,17 @@
 
       <view class="bottom-actions">
         <button class="secondary-button" bindtap="goPracticeAgain">再练一遍</button>
+        <button class="secondary-button" bindtap="openPoster">分享海报</button>
         <button class="primary-button" bindtap="goHome">回到首页</button>
       </view>
     </block>
+
+    <poster 
+      wx:if="{{showPoster}}"
+      visible="{{showPoster}}"
+      score="{{report.overall_score}}"
+      lessonTitle="{{report.lesson_title}}"
+      bind:close="closePoster"
+    />
   </view>
 </view>

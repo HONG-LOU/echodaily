@@ -31,6 +31,7 @@
         <view class="chip-row">
           <text class="chip">重点音素 {{profile.weak_sound}}</text>
           <text class="chip">累计 {{profile.total_practices}} 次</text>
+          <button class="mini-button" bindtap="openPoster">分享海报</button>
         </view>
 
         <view class="metrics-row">
@@ -82,6 +83,18 @@
         </view>
       </view>
 
+      <!-- Check-in Calendar -->
+      <view class="glass-card calendar-card">
+        <view class="calendar-header">
+          <text class="eyebrow">近30天打卡</text>
+        </view>
+        <view class="calendar-grid">
+          <block wx:for="{{calendarDays}}" wx:key="date">
+            <view class="calendar-cell {{item.active ? 'active' : ''}}"></view>
+          </block>
+        </view>
+      </view>
+
       <!-- Recent History -->
       <view class="glass-card history-card">
         <view class="history-header">
@@ -114,5 +127,15 @@
         </view>
       </view>
     </block>
+
+    <poster 
+      wx:if="{{showPoster}}"
+      visible="{{showPoster}}"
+      nickname="{{profile.nickname}}"
+      score="{{latestPractice ? latestPractice.score : 0}}"
+      lessonTitle="{{latestPractice ? latestPractice.lesson_title : '快去练习吧'}}"
+      streakDays="{{profile.streak_days}}"
+      bind:close="closePoster"
+    />
   </view>
 </view>

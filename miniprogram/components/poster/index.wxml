@@ -1,0 +1,11 @@
+<view class="poster-container" wx:if="{{visible}}">
+  <view class="poster-mask" bindtap="close"></view>
+  <view class="poster-content">
+    <canvas type="2d" id="posterCanvas" class="poster-canvas" style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"></canvas>
+    
+    <view class="poster-actions">
+      <button class="secondary-button" bindtap="close">取消</button>
+      <button class="primary-button" bindtap="saveToAlbum" loading="{{saving}}">保存到相册</button>
+    </view>
+  </view>
+</view>

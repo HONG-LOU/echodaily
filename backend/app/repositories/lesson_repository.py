@@ -58,3 +58,12 @@ class LessonRepository:
     async def get_by_id(self, session: AsyncSession, lesson_id: str) -> Lesson | None:
         statement = select(Lesson).where(Lesson.id == lesson_id)
         return await session.scalar(statement)
+
+    async def list_recent(self, session: AsyncSession, *, current_day: date, limit: int = 7) -> list[Lesson]:
+        statement = (
+            select(Lesson)
+            .where(Lesson.published_on <= current_day)
+            .order_by(Lesson.published_on.desc(), Lesson.id.desc())
+            .limit(limit)
+        )
+        return list((await session.scalars(statement)).all())

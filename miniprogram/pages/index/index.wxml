@@ -47,28 +47,38 @@
         </view>
       </view>
 
-      <!-- Lesson Card -->
-      <view class="glass-card lesson-card">
-        <view class="lesson-header">
-          <text class="lesson-pack">{{dashboard.today_lesson.pack_name}}</text>
-          <text class="lesson-time">{{dashboard.today_lesson.estimated_seconds}}秒精练</text>
-        </view>
-        
-        <text class="lesson-title">{{dashboard.today_lesson.title}}</text>
-        <text class="lesson-text">{{dashboard.today_lesson.english_text}}</text>
-        <text class="lesson-translation">{{dashboard.today_lesson.translation}}</text>
-        
-        <view class="chip-row">
-          <block wx:for="{{dashboard.today_lesson.tags}}" wx:key="*this" wx:for-index="index">
-            <text class="chip" wx:if="{{index < 3}}">{{item}}</text>
-          </block>
-        </view>
+      <!-- Lesson Swiper -->
+      <swiper class="lesson-swiper" bindchange="onSwiperChange" current="{{currentLessonIndex}}">
+        <block wx:for="{{recentLessons}}" wx:key="id" wx:for-item="lesson">
+          <swiper-item>
+            <view class="glass-card lesson-card">
+              <view class="lesson-header">
+                <text class="lesson-pack">{{lesson.pack_name}}</text>
+                <text class="lesson-time">{{lesson.estimated_seconds}}秒精练</text>
+              </view>
+              
+              <text class="lesson-title">{{lesson.title}}</text>
+              <text class="lesson-text">{{lesson.english_text}}</text>
+              <text class="lesson-translation">{{lesson.translation}}</text>
+              
+              <view class="audio-action" wx:if="{{lesson.audio_url}}">
+                <button class="mini-button" catchtap="playOriginalAudio">{{playingOriginal ? '停止原声' : '播放原声'}}</button>
+              </view>
 
-        <view class="lesson-hint">
-          <text class="hint-label">提示</text>
-          <text class="hint-text">{{dashboard.today_lesson.mode_hint}}</text>
-        </view>
-      </view>
+              <view class="chip-row">
+                <block wx:for="{{lesson.tags}}" wx:key="*this" wx:for-index="index">
+                  <text class="chip" wx:if="{{index < 3}}">{{item}}</text>
+                </block>
+              </view>
+
+              <view class="lesson-hint">
+                <text class="hint-label">提示</text>
+                <text class="hint-text">{{lesson.mode_hint}}</text>
+              </view>
+            </view>
+          </swiper-item>
+        </block>
+      </swiper>
 
       <!-- Actions & Status -->
       <view class="bottom-section">
@@ -84,7 +94,7 @@
         </view>
         
         <view class="action-buttons {{latestScore ? 'two-column-actions' : ''}}">
-          <button class="primary-button" bindtap="startPractice" data-lesson-id="{{dashboard.today_lesson.id}}">开始录音</button>
+          <button class="primary-button" bindtap="startPractice" data-lesson-id="{{recentLessons[currentLessonIndex].id}}">开始录音</button>
           <button wx:if="{{latestScore}}" class="secondary-button" bindtap="openRecentReport" data-assessment-id="{{latestScore.assessment_id}}">查看报告</button>
         </view>
       </view>

@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "回音报告"
+  "navigationBarTitleText": "回音报告",
+  "usingComponents": {
+    "poster": "../../components/poster/index"
+  }
 }

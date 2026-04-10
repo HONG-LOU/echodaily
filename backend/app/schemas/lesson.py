@@ -13,6 +13,7 @@ class LessonResponseSchema(BaseModel):
     tags: list[str]
     difficulty: str
     estimated_seconds: int
+    audio_url: str | None = None
     theme_tone: str
 
     model_config = ConfigDict(from_attributes=True)
