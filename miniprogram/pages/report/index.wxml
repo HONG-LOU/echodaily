@@ -1,14 +1,16 @@
-<scroll-view class="screen" scroll-y enhanced show-scrollbar="{{false}}">
+<view class="screen">
   <view class="page-shell report-page">
     <block wx:if="{{loading}}">
-      <view class="glass-card">
-        <view class="empty-state">正在生成你的评测结果和错词分析。</view>
+      <view class="glass-card loading-card">
+        <text class="eyebrow">Report</text>
+        <text class="title-xl">正在生成报告...</text>
       </view>
     </block>
 
     <block wx:elif="{{errorMessage}}">
       <view class="glass-card">
         <view class="empty-state">
+          <text class="title-md">出错了</text>
           <text class="subtitle">{{errorMessage}}</text>
           <button class="primary-button retry-button" bindtap="handleRetry">重新加载</button>
         </view>
@@ -16,85 +18,95 @@
     </block>
 
     <block wx:elif="{{report}}">
-      <view class="glass-card score-card">
-        <view class="score-head">
-          <view>
-            <text class="eyebrow">Report</text>
-            <text class="score-caption">{{report.lesson_title}}</text>
-          </view>
-          <text class="pill">真实录音评测</text>
-        </view>
-        <view class="score-shell">
-          <view class="score-bubble">
-            <text class="score-value">{{report.overall_score}}</text>
-            <text class="score-label">总分</text>
-          </view>
-          <view class="score-copy">
-            <text class="section-title">{{report.headline}}</text>
-            <text class="section-subtitle">{{report.encouragement}}</text>
-          </view>
-        </view>
-        <view class="summary-metrics">
-          <view class="summary-metric">
-            <text class="summary-metric__label">练习时长</text>
-            <text class="summary-metric__value">{{report.duration_seconds}} 秒</text>
-          </view>
-          <view class="summary-metric">
-            <text class="summary-metric__label">重点词</text>
-            <text class="summary-metric__value">{{report.mistake_count}} 个</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="glass-card" wx:if="{{report.recognized_text}}">
-        <text class="section-kicker">Recognition</text>
-        <text class="section-title">识别文本</text>
-        <text class="section-subtitle">{{report.recognized_text}}</text>
-      </view>
-
-      <view class="glass-card radar-card">
-        <text class="section-kicker">Breakdown</text>
-        <text class="section-title">维度拆解</text>
-        <text class="section-subtitle">先看哪一项最弱，再决定下一次复练的重点。</text>
-        <canvas canvas-id="radarCanvas" class="radar-canvas"></canvas>
-        <view class="dimension-list">
-          <view class="dimension-row" wx:for="{{report.dimensions}}" wx:key="key">
-            <text class="dimension-label">{{item.label}}</text>
-            <view class="dimension-track">
-              <view class="dimension-fill" style="width: {{item.score}}%;"></view>
-            </view>
-            <text class="dimension-score">{{item.score}}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="glass-card highlight-card">
-        <text class="section-kicker">Coach Notes</text>
-        <text class="section-title">重点纠音</text>
-        <text class="section-subtitle">优先修正最影响清晰度的词，再回到整句复练。</text>
-        <block wx:if="{{report.highlights.length}}">
-          <view class="highlight-item highlight-item--{{item.severity}}" wx:for="{{report.highlights}}" wx:key="index">
-            <view class="highlight-top">
-              <view>
-                <text class="highlight-word">{{item.word}}</text>
-                <text class="highlight-issue">{{item.observed_issue}}</text>
+      <scroll-view class="report-scroll" scroll-y>
+        <view class="scroll-content">
+          <view class="glass-card score-card">
+            <view class="score-head">
+              <view class="score-info">
+                <text class="eyebrow">REPORT</text>
+                <text class="score-caption">{{report.lesson_title}}</text>
               </view>
-              <text class="pill">{{item.accuracy_score}} 分</text>
+              <text class="pill">真实录音评测</text>
             </view>
-            <text class="highlight-tip">标准 {{item.expected_ipa}} · 检测 {{item.observed_ipa}}</text>
-            <text class="highlight-tip">{{item.coach_tip}}</text>
-            <text class="highlight-severity">
-              {{item.severity === 'high' ? '优先处理' : item.severity === 'medium' ? '继续关注' : '轻提醒'}}
-            </text>
+            
+            <view class="score-shell">
+              <view class="score-bubble">
+                <text class="score-value">{{report.overall_score}}</text>
+                <text class="score-label">总分</text>
+              </view>
+              <view class="score-copy">
+                <text class="title-md">{{report.headline}}</text>
+                <text class="subtitle">{{report.encouragement}}</text>
+              </view>
+            </view>
+            
+            <text class="recognized-copy" wx:if="{{report.recognized_text}}">识别文本：{{report.recognized_text}}</text>
+            
+            <view class="summary-metrics">
+              <view class="summary-metric">
+                <text class="summary-metric__label">练习时长</text>
+                <text class="summary-metric__value">{{report.duration_seconds}} 秒</text>
+              </view>
+              <view class="summary-metric">
+                <text class="summary-metric__label">重点词</text>
+                <text class="summary-metric__value">{{report.mistake_count}} 个</text>
+              </view>
+            </view>
           </view>
-        </block>
-        <text class="section-subtitle" wx:else>这一遍没有识别到明显问题词，继续保持当前节奏。</text>
-      </view>
 
-      <view class="two-column-actions">
+          <view class="glass-card breakdown-card">
+            <view class="section-head">
+              <view class="section-info">
+                <text class="eyebrow">Breakdown</text>
+                <text class="section-subtitle">比雷达图更直接地看出哪一项最弱。</text>
+              </view>
+            </view>
+            <view class="dimension-grid">
+              <view class="dimension-card" wx:for="{{report.dimensions}}" wx:key="key">
+                <view class="dimension-header">
+                  <text class="dimension-label">{{item.label}}</text>
+                  <text class="dimension-score">{{item.score}}</text>
+                </view>
+                <view class="dimension-track">
+                  <view class="dimension-fill" style="width: {{item.score}}%;"></view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view class="glass-card highlight-card">
+            <view class="highlight-head">
+              <view class="highlight-info">
+                <text class="eyebrow">Coach Notes</text>
+                <text class="section-subtitle">详细的发音纠正建议。</text>
+              </view>
+              <text class="pill">{{report.mistake_count}} 处</text>
+            </view>
+            
+            <block wx:if="{{primaryHighlights.length}}">
+              <view class="highlight-item highlight-item--{{item.severity}}" wx:for="{{primaryHighlights}}" wx:key="index">
+                <view class="highlight-top">
+                  <view class="highlight-copy">
+                    <text class="highlight-word">{{item.word}}</text>
+                    <text class="highlight-issue">{{item.observed_issue}}</text>
+                  </view>
+                  <text class="highlight-score">{{item.accuracy_score}}</text>
+                </view>
+                <view class="highlight-tips">
+                  <text class="highlight-tip">标准 {{item.expected_ipa}} · 检测 {{item.observed_ipa}}</text>
+                  <text class="highlight-tip">{{item.coach_tip}}</text>
+                </view>
+              </view>
+            </block>
+            <text class="empty-state-text" wx:else>这一遍没有识别到明显问题词，继续保持现在的节奏。</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="bottom-actions">
         <button class="secondary-button" bindtap="goPracticeAgain">再练一遍</button>
         <button class="primary-button" bindtap="goHome">回到首页</button>
       </view>
     </block>
   </view>
-</scroll-view>
+</view>

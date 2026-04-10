@@ -1,10 +1,13 @@
 import { fetchProfile } from "../../utils/api";
-import type { ProfileResponse } from "../../types/api";
+import type { MistakeNotebookEntry, ProfileResponse, RecentPractice } from "../../types/api";
 
 interface ProfilePageData {
   loading: boolean;
   errorMessage: string;
   profile: ProfileResponse | null;
+  topMistake: MistakeNotebookEntry | null;
+  latestPractice: RecentPractice | null;
+  secondPractice: RecentPractice | null;
 }
 
 type ProfilePageCustom = {
@@ -18,6 +21,9 @@ Page<ProfilePageData, ProfilePageCustom>({
     loading: true,
     errorMessage: "",
     profile: null,
+    topMistake: null,
+    latestPractice: null,
+    secondPractice: null,
   },
 
   onLoad() {
@@ -40,12 +46,18 @@ Page<ProfilePageData, ProfilePageCustom>({
       const profile = await fetchProfile();
       this.setData({
         profile,
+        topMistake: profile.mistake_notebook[0] || null,
+        latestPractice: profile.recent_practices[0] || null,
+        secondPractice: profile.recent_practices[1] || null,
         loading: false,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "个人中心加载失败。";
       this.setData({
         errorMessage: message,
+        topMistake: null,
+        latestPractice: null,
+        secondPractice: null,
         loading: false,
       });
     }

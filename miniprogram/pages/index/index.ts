@@ -1,10 +1,11 @@
 import { fetchDashboard } from "../../utils/api";
-import type { DashboardResponse } from "../../types/api";
+import type { DashboardResponse, RecentScore } from "../../types/api";
 
 interface HomePageData {
   loading: boolean;
   errorMessage: string;
   dashboard: DashboardResponse | null;
+  latestScore: RecentScore | null;
 }
 
 type HomePageCustom = {
@@ -19,6 +20,7 @@ Page<HomePageData, HomePageCustom>({
     loading: true,
     errorMessage: "",
     dashboard: null,
+    latestScore: null,
   },
 
   onLoad() {
@@ -46,12 +48,14 @@ Page<HomePageData, HomePageCustom>({
       const dashboard = await fetchDashboard();
       this.setData({
         dashboard,
+        latestScore: dashboard.recent_scores[0] || null,
         loading: false,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "首页加载失败，请稍后重试。";
       this.setData({
         errorMessage: message,
+        latestScore: null,
         loading: false,
       });
     }
@@ -61,7 +65,7 @@ Page<HomePageData, HomePageCustom>({
     const lessonId = String(event.currentTarget.dataset.lessonId || "");
     if (!lessonId) {
       wx.showToast({
-        title: "今日任务暂不可用",
+        title: "今天的练习暂时不可用",
         icon: "none",
       });
       return;

@@ -1,138 +1,93 @@
-<scroll-view class="screen" scroll-y enhanced show-scrollbar="{{false}}">
-  <view class="page-shell home-page">
+<view class="screen">
+  <view class="page-shell">
     <block wx:if="{{loading}}">
       <view class="glass-card loading-card">
         <text class="eyebrow">EchoDaily</text>
-        <text class="title-xl">正在准备今天的练习</text>
-        <text class="subtitle">任务内容、练习入口和最近成绩马上就绪。</text>
+        <text class="title-xl">准备中...</text>
       </view>
     </block>
 
     <block wx:elif="{{errorMessage}}">
       <view class="glass-card">
         <view class="empty-state">
-          <text class="title-md">首页暂时打不开</text>
+          <text class="title-md">出错了</text>
           <text class="subtitle">{{errorMessage}}</text>
-          <button class="primary-button retry-button" bindtap="handleRetry">重新加载</button>
+          <button class="primary-button" bindtap="handleRetry">重试</button>
         </view>
       </view>
     </block>
 
     <block wx:elif="{{dashboard}}">
-      <view class="glass-card hero-card">
-        <view class="hero-glow hero-glow--peach"></view>
-        <view class="hero-glow hero-glow--sage"></view>
-        <view class="hero-topbar">
-          <view>
-            <text class="eyebrow">Today</text>
-            <text class="hero-caption">{{dashboard.daily_message}}</text>
+      <!-- Header Card -->
+      <view class="glass-card header-card">
+        <view class="header-top">
+          <view class="header-info">
+            <text class="eyebrow">TODAY</text>
+            <text class="title-xl">今天继续开口</text>
+            <text class="subtitle">{{dashboard.user.nickname}}，{{dashboard.daily_message}}</text>
           </view>
-          <view class="avatar-bubble">
-            <text class="avatar-letter">{{dashboard.user.avatar_symbol}}</text>
-          </view>
+          <view class="avatar">{{dashboard.user.avatar_symbol}}</view>
         </view>
-        <text class="hero-title">今天继续读一遍</text>
-        <text class="hero-summary">{{dashboard.user.nickname}}，{{dashboard.user.bio}}</text>
-        <view class="chip-row hero-chip-row">
-          <text class="chip">{{dashboard.user.city}}</text>
-          <text class="pill">重点音素 {{dashboard.user.weak_sound}}</text>
-        </view>
-        <view class="hero-foot">
-          <view class="hero-metric">
-            <text class="hero-metric__label">连续练习</text>
-            <text class="hero-metric__value">{{dashboard.user.streak_days}} 天</text>
+        
+        <view class="metrics-row">
+          <view class="metric-item">
+            <text class="metric-value">{{dashboard.user.streak_days}}</text>
+            <text class="metric-label">连续天数</text>
           </view>
-          <view class="hero-metric">
-            <text class="hero-metric__label">本周投入</text>
-            <text class="hero-metric__value">{{dashboard.user.weekly_minutes}} 分钟</text>
+          <view class="metric-divider"></view>
+          <view class="metric-item">
+            <text class="metric-value">{{dashboard.user.weekly_minutes}}</text>
+            <text class="metric-label">本周分钟</text>
           </view>
-          <view class="hero-focus">
-            <text class="hero-focus__label">累计练习</text>
-            <text class="hero-focus__value">{{dashboard.user.total_practices}} 次真实录音</text>
+          <view class="metric-divider"></view>
+          <view class="metric-item">
+            <text class="metric-value">{{dashboard.user.total_practices}}</text>
+            <text class="metric-label">累计次数</text>
           </view>
         </view>
       </view>
 
-      <view class="section-block">
-        <view class="section-head section-head--stack">
-          <text class="section-kicker">Practice</text>
-          <text class="section-title">今日任务</text>
-          <text class="section-subtitle">
-            {{dashboard.today_lesson.pack_name}} · {{dashboard.today_lesson.subtitle}}
-          </text>
+      <!-- Lesson Card -->
+      <view class="glass-card lesson-card">
+        <view class="lesson-header">
+          <text class="lesson-pack">{{dashboard.today_lesson.pack_name}}</text>
+          <text class="lesson-time">{{dashboard.today_lesson.estimated_seconds}}秒精练</text>
+        </view>
+        
+        <text class="lesson-title">{{dashboard.today_lesson.title}}</text>
+        <text class="lesson-text">{{dashboard.today_lesson.english_text}}</text>
+        <text class="lesson-translation">{{dashboard.today_lesson.translation}}</text>
+        
+        <view class="chip-row">
+          <block wx:for="{{dashboard.today_lesson.tags}}" wx:key="*this" wx:for-index="index">
+            <text class="chip" wx:if="{{index < 3}}">{{item}}</text>
+          </block>
         </view>
 
-        <view class="glass-card lesson-card {{'lesson-theme--' + dashboard.today_lesson.theme_tone}}">
-          <view class="lesson-meta">
-            <view>
-              <text class="lesson-pack">{{dashboard.today_lesson.pack_name}}</text>
-              <text class="lesson-time">{{dashboard.today_lesson.estimated_seconds}} 秒精练</text>
-            </view>
-            <text class="pill">{{dashboard.today_lesson.difficulty}}</text>
-          </view>
-          <view class="chip-row">
-            <text class="chip" wx:for="{{dashboard.today_lesson.tags}}" wx:key="*this">{{item}}</text>
-          </view>
-          <text class="lesson-title">{{dashboard.today_lesson.title}}</text>
-          <text class="lesson-text">{{dashboard.today_lesson.english_text}}</text>
-          <text class="lesson-translation">{{dashboard.today_lesson.translation}}</text>
-          <view class="lesson-note-grid">
-            <view class="lesson-note">
-              <text class="lesson-note__label">练习场景</text>
-              <text class="lesson-note__body">{{dashboard.today_lesson.scenario}}</text>
-            </view>
-            <view class="lesson-note">
-              <text class="lesson-note__label">跟读提示</text>
-              <text class="lesson-note__body">{{dashboard.today_lesson.mode_hint}}</text>
-            </view>
-          </view>
-          <button
-            class="primary-button action-block"
-            bindtap="startPractice"
-            data-lesson-id="{{dashboard.today_lesson.id}}"
-          >
-            开始录音练习
-          </button>
+        <view class="lesson-hint">
+          <text class="hint-label">提示</text>
+          <text class="hint-text">{{dashboard.today_lesson.mode_hint}}</text>
         </view>
       </view>
 
-      <view class="section-block">
-        <view class="section-head section-head--stack">
-          <text class="section-kicker">Progress</text>
-          <text class="section-title">练习统计</text>
-          <text class="section-subtitle">先把频率和稳定性做起来，再去抠细节。</text>
-        </view>
-        <view class="stat-grid">
-          <view class="glass-card stat-card" wx:for="{{dashboard.quick_stats}}" wx:key="label">
-            <text class="stat-label">{{item.label}}</text>
-            <text class="stat-value">{{item.value}}</text>
-            <text class="stat-caption">{{item.caption}}</text>
+      <!-- Actions & Status -->
+      <view class="bottom-section">
+        <view class="status-cards">
+          <view class="status-card">
+            <text class="status-label">发音重点</text>
+            <text class="status-value">{{dashboard.user.weak_sound}}</text>
+          </view>
+          <view class="status-card">
+            <text class="status-label">今日状态</text>
+            <text class="status-value">{{latestScore ? latestScore.overall_score + '分' : '待练习'}}</text>
           </view>
         </view>
-      </view>
-
-      <view class="section-block" wx:if="{{dashboard.recent_scores.length}}">
-        <view class="section-head section-head--stack">
-          <text class="section-kicker">Recent</text>
-          <text class="section-title">最近成绩</text>
-          <text class="section-subtitle">多回看报告，纠音会更快形成肌肉记忆。</text>
-        </view>
-        <view class="glass-card recent-card">
-          <view
-            class="recent-row"
-            wx:for="{{dashboard.recent_scores}}"
-            wx:key="assessment_id"
-            bindtap="openRecentReport"
-            data-assessment-id="{{item.assessment_id}}"
-          >
-            <view>
-              <text class="recent-title">{{item.lesson_title}}</text>
-              <text class="recent-time">{{item.practiced_at}}</text>
-            </view>
-            <view class="recent-score">{{item.overall_score}}</view>
-          </view>
+        
+        <view class="action-buttons {{latestScore ? 'two-column-actions' : ''}}">
+          <button class="primary-button" bindtap="startPractice" data-lesson-id="{{dashboard.today_lesson.id}}">开始录音</button>
+          <button wx:if="{{latestScore}}" class="secondary-button" bindtap="openRecentReport" data-assessment-id="{{latestScore.assessment_id}}">查看报告</button>
         </view>
       </view>
     </block>
   </view>
-</scroll-view>
+</view>

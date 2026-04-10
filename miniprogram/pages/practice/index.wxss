@@ -1,236 +1,130 @@
-.practice-page {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-}
-
-.retry-button,
-.submit-button,
-.reveal-button,
-.hint-button {
-  margin-top: 24rpx;
-}
-
-.practice-hero,
-.script-card,
-.recorder-card,
-.transcript-card {
+.page-shell {
   padding: 32rpx;
+  gap: 24rpx;
 }
 
-.practice-hero {
-  background: linear-gradient(160deg, rgba(255, 252, 248, 0.96), rgba(247, 237, 226, 0.86));
+.practice-card {
+  flex: 1;
+  padding: 40rpx 32rpx;
+  gap: 24rpx;
+  overflow-y: auto;
 }
 
-.practice-theme--cream-sky {
-  background: linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(245, 239, 230, 0.9));
-}
-
-.practice-theme--peach-rose {
-  background: linear-gradient(180deg, rgba(255, 249, 245, 0.98), rgba(249, 232, 226, 0.9));
-}
-
-.practice-theme--mint-latte {
-  background: linear-gradient(180deg, rgba(252, 253, 249, 0.98), rgba(232, 241, 236, 0.92));
-}
-
-.hero-glow {
-  position: absolute;
-  width: 240rpx;
-  height: 240rpx;
-  border-radius: 50%;
-  filter: blur(10rpx);
-  opacity: 0.85;
-}
-
-.hero-glow--peach {
-  top: -60rpx;
-  right: -40rpx;
-  background: radial-gradient(circle, rgba(239, 200, 167, 0.78), transparent 70%);
-}
-
-.hero-glow--sage {
-  left: -60rpx;
-  bottom: -100rpx;
-  background: radial-gradient(circle, rgba(200, 216, 206, 0.62), transparent 70%);
-}
-
-.practice-hero__top {
+.practice-header {
   display: flex;
   justify-content: space-between;
-  gap: 16rpx;
+  align-items: center;
+  margin-bottom: 8rpx;
 }
 
-.practice-pack {
-  display: block;
-  margin-top: 12rpx;
-  color: var(--ink-soft);
-  font-size: 24rpx;
-}
-
-.mode-switch {
-  display: inline-flex;
+.script-section {
+  display: flex;
+  flex-direction: column;
   gap: 12rpx;
-  margin: 24rpx 0 22rpx;
-  padding: 8rpx;
-  border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.46);
-}
-
-.mode-pill {
-  min-width: 132rpx;
-  padding: 16rpx 22rpx;
-  border-radius: 999rpx;
-  color: var(--ink-soft);
-  text-align: center;
-  font-size: 24rpx;
-}
-
-.mode-pill--active {
-  background: linear-gradient(180deg, #3a332d, #221d18);
-  color: #fffaf5;
-  box-shadow: 0 16rpx 24rpx rgba(51, 39, 29, 0.14);
-}
-
-.practice-title {
-  margin-top: 0;
-}
-
-.practice-chip-row {
-  margin-top: 20rpx;
+  margin-top: 16rpx;
+  background: var(--surface-soft);
+  padding: 32rpx;
+  border-radius: 24rpx;
 }
 
 .script-english {
-  display: block;
-  margin-top: 16rpx;
-  font-size: 44rpx;
-  line-height: 1.54;
-  font-weight: 600;
-  letter-spacing: -0.4rpx;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--ink-strong);
+  line-height: 1.4;
 }
 
 .script-translation {
-  display: block;
-  margin-top: 18rpx;
-  color: var(--ink-soft);
   font-size: 26rpx;
-  line-height: 1.82;
-}
-
-.script-scene {
-  margin-top: 16rpx;
-  padding: 26rpx;
-  border-radius: 30rpx;
-  background: rgba(255, 255, 255, 0.58);
-}
-
-.script-scene-label,
-.script-note__label {
-  display: block;
   color: var(--ink-soft);
-  font-size: 22rpx;
-}
-
-.script-scene-body {
-  display: block;
-  margin-top: 12rpx;
-  font-size: 32rpx;
-  line-height: 1.75;
-}
-
-.script-scene-hint {
-  display: block;
-  margin-top: 12rpx;
-  color: var(--ink-soft);
-  font-size: 24rpx;
-  line-height: 1.72;
-}
-
-.script-note-grid {
-  display: grid;
-  gap: 14rpx;
-  margin-top: 22rpx;
+  line-height: 1.5;
 }
 
 .script-note {
-  padding: 22rpx;
-  border-radius: 28rpx;
-  background: rgba(255, 255, 255, 0.62);
+  margin-top: 16rpx;
+  background: var(--surface-soft);
+  border-radius: 24rpx;
+  padding: 24rpx;
 }
 
-.script-note--soft {
-  background: linear-gradient(135deg, rgba(255, 245, 238, 0.9), rgba(248, 239, 233, 0.72));
-}
-
-.script-note__body {
+.note-label {
+  font-size: 20rpx;
+  color: var(--ink-soft);
+  font-weight: 600;
   display: block;
-  margin-top: 10rpx;
-  font-size: 26rpx;
-  line-height: 1.75;
+  margin-bottom: 8rpx;
 }
 
-.recorder-card {
-  background: linear-gradient(180deg, rgba(255, 253, 249, 0.96), rgba(245, 236, 226, 0.82));
+.note-text {
+  font-size: 24rpx;
+  color: var(--ink-strong);
+  line-height: 1.4;
 }
 
-.recorder-summary {
+.recorder-section {
+  margin-top: auto;
   display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  margin-top: 22rpx;
+  flex-direction: column;
+  align-items: center;
+  gap: 32rpx;
 }
 
-.summary-chip {
-  padding: 12rpx 18rpx;
-  border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.62);
+.recorder-status {
+  display: flex;
+  gap: 16rpx;
+}
+
+.status-badge {
+  padding: 8rpx 24rpx;
+  border-radius: 100rpx;
+  background: var(--surface-soft);
   color: var(--ink-base);
   font-size: 22rpx;
+  font-weight: 500;
 }
 
 .recorder-ring {
-  position: relative;
-  margin: 30rpx auto 32rpx;
-  width: 352rpx;
-  height: 352rpx;
-  border-radius: 50%;
+  width: 240rpx;
+  height: 240rpx;
+  border-radius: 120rpx;
+  background: var(--surface-soft);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.98), rgba(255, 247, 239, 0.92) 46%, rgba(243, 213, 189, 0.72) 100%);
-  box-shadow:
-    inset 0 0 0 18rpx rgba(255, 255, 255, 0.46),
-    0 24rpx 50rpx rgba(105, 82, 61, 0.12);
-}
-
-.recorder-ring::after {
-  content: "";
-  position: absolute;
-  top: 24rpx;
-  right: 24rpx;
-  bottom: 24rpx;
-  left: 24rpx;
-  border-radius: 50%;
-  border: 1rpx solid rgba(255, 255, 255, 0.68);
+  gap: 8rpx;
+  border: 4rpx solid var(--line-soft);
+  transition: all 0.3s ease;
 }
 
 .recorder-ring--active {
-  background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.98), rgba(255, 236, 231, 0.9) 44%, rgba(232, 179, 171, 0.78) 100%);
-  box-shadow:
-    inset 0 0 0 18rpx rgba(255, 255, 255, 0.38),
-    0 26rpx 56rpx rgba(162, 103, 92, 0.16);
+  background: #FFE5E5;
+  border-color: #FF3B30;
+  transform: scale(1.05);
 }
 
-.recorder-status {
-  display: block;
-  color: var(--ink-soft);
-  font-size: 24rpx;
-}
-
-.recorder-time {
-  display: block;
-  margin-top: 12rpx;
-  font-size: 42rpx;
+.ring-time {
+  font-size: 48rpx;
   font-weight: 700;
+  color: var(--ink-strong);
+}
+
+.ring-label {
+  font-size: 24rpx;
+  color: var(--ink-soft);
+}
+
+.recorder-actions {
+  width: 100%;
+}
+
+.footer-actions {
+  width: 100%;
+  display: flex;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.submit-btn {
+  flex: 1;
 }

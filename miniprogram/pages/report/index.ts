@@ -1,16 +1,16 @@
 import { fetchAssessment } from "../../utils/api";
-import type { AssessmentDetail } from "../../types/api";
+import type { AssessmentDetail, AssessmentHighlight } from "../../types/api";
 
 interface ReportPageData {
   loading: boolean;
   errorMessage: string;
   report: AssessmentDetail | null;
+  primaryHighlights: AssessmentHighlight[];
 }
 
 type ReportPageCustom = {
   assessmentId: string;
   loadReport: (assessmentId: string) => Promise<void>;
-  drawRadar: () => void;
   goPracticeAgain: () => void;
   goHome: () => void;
   handleRetry: () => void;
@@ -21,6 +21,7 @@ Page<ReportPageData, ReportPageCustom>({
     loading: true,
     errorMessage: "",
     report: null,
+    primaryHighlights: [],
   },
 
   assessmentId: "",
@@ -47,102 +48,20 @@ Page<ReportPageData, ReportPageCustom>({
       const report = await fetchAssessment(assessmentId);
       this.setData({
         report,
+        primaryHighlights: report.highlights,
         loading: false,
       });
       wx.setNavigationBarTitle({
-        title: `${report.overall_score} 分评测报告`,
-      });
-      wx.nextTick(() => {
-        this.drawRadar();
+        title: `${report.overall_score} 分报告`,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "报告加载失败。";
       this.setData({
         loading: false,
         errorMessage: message,
+        primaryHighlights: [],
       });
     }
-  },
-
-  drawRadar() {
-    const report = this.data.report;
-    if (!report) {
-      return;
-    }
-
-    const ctx = wx.createCanvasContext("radarCanvas", this);
-    const size = 280;
-    const center = size / 2;
-    const radius = 92;
-    const metrics = report.dimensions;
-
-    ctx.clearRect(0, 0, size, size);
-
-    for (let level = 1; level <= 4; level += 1) {
-      const levelRadius = (radius / 4) * level;
-      ctx.beginPath();
-      metrics.forEach((_, index) => {
-        const angle = (-90 + (360 / metrics.length) * index) * (Math.PI / 180);
-        const x = center + Math.cos(angle) * levelRadius;
-        const y = center + Math.sin(angle) * levelRadius;
-        if (index === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      });
-      ctx.closePath();
-      ctx.setStrokeStyle("rgba(109, 92, 73, 0.1)");
-      ctx.stroke();
-    }
-
-    metrics.forEach((metric, index) => {
-      const angle = (-90 + (360 / metrics.length) * index) * (Math.PI / 180);
-      const axisX = center + Math.cos(angle) * radius;
-      const axisY = center + Math.sin(angle) * radius;
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(axisX, axisY);
-      ctx.setStrokeStyle("rgba(109, 92, 73, 0.1)");
-      ctx.stroke();
-
-      const labelX = center + Math.cos(angle) * (radius + 28);
-      const labelY = center + Math.sin(angle) * (radius + 28);
-      ctx.setFillStyle("#857565");
-      ctx.setFontSize(12);
-      ctx.fillText(metric.label, labelX - 14, labelY);
-    });
-
-    ctx.beginPath();
-    metrics.forEach((metric, index) => {
-      const angle = (-90 + (360 / metrics.length) * index) * (Math.PI / 180);
-      const metricRadius = radius * (metric.score / 100);
-      const x = center + Math.cos(angle) * metricRadius;
-      const y = center + Math.sin(angle) * metricRadius;
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
-    ctx.closePath();
-    ctx.setFillStyle("rgba(223, 171, 120, 0.24)");
-    ctx.fill();
-    ctx.setStrokeStyle("#d8a16f");
-    ctx.stroke();
-
-    metrics.forEach((metric, index) => {
-      const angle = (-90 + (360 / metrics.length) * index) * (Math.PI / 180);
-      const metricRadius = radius * (metric.score / 100);
-      const x = center + Math.cos(angle) * metricRadius;
-      const y = center + Math.sin(angle) * metricRadius;
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.setFillStyle("#efc6a1");
-      ctx.fill();
-    });
-
-    ctx.draw();
   },
 
   goPracticeAgain() {
