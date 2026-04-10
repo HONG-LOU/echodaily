@@ -76,8 +76,8 @@
                 </block>
               </view>
 
-              <view class="swipe-guide" wx:if="{{recentLessons.length > 1 && index === 0}}">
-                <text class="swipe-guide-text">← 左右滑动切换句子 →</text>
+              <view class="swipe-guide" wx:if="{{recentLessons.length > 1}}">
+                <text class="swipe-guide-text" wx:if="{{index === 0}}">← 左右滑动切换句子 →</text>
               </view>
 
               <view class="lesson-hint">
