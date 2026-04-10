@@ -27,6 +27,7 @@ from app.api.routers import dashboard as dashboard_router  # noqa: E402
 from app.api.routers import lessons as lessons_router  # noqa: E402
 from app.core.errors import ServiceUnavailableError  # noqa: E402
 from app.integrations.deepseek_daily_message_client import GeneratedDailyMessage  # noqa: E402
+from app.integrations.deepseek_daily_message_client import GeneratedLessonCandidate  # noqa: E402
 from app.integrations.tencent_oral_evaluation_client import (  # noqa: E402
     EvaluatedWord,
     OralEvaluationResult,
@@ -139,16 +140,25 @@ def test_lessons_endpoint_returns_exact_schedule(monkeypatch) -> None:
 
 def test_recent_lessons_endpoint_returns_fifty_cards(monkeypatch) -> None:
     freeze_today(monkeypatch, date(2026, 4, 10))
-    monkeypatch.setattr(
-        daily_message_client,
-        "generate_message",
-        AsyncMock(
-            return_value=GeneratedDailyMessage(
-                text="今天这句先读清楚，语气自然就会更稳。",
-                provider="deepseek",
-                model="deepseek-chat",
+    daily_message_client.generate_lesson_candidates = AsyncMock(
+        side_effect=lambda **kwargs: [
+            GeneratedLessonCandidate(
+                title=f"AI Test {idx + 1}",
+                subtitle="AI 句库 · 测试",
+                pack_name="AI 每日精选",
+                english_text=f"This is generated practice line number {idx + 1}.",
+                translation=f"这是第 {idx + 1} 条生成练习句。",
+                scenario="测试场景",
+                mode_hint="先慢读，再连读。",
+                blind_box_prompt="测试盲盒提示",
+                tags=["AI句库", "测试"],
+                difficulty="Intermediate",
+                estimated_seconds=20,
+                poster_blurb="测试海报文案",
+                theme_tone="mint-latte",
             )
-        ),
+            for idx in range(int(kwargs.get("count", 0)))
+        ]
     )
 
     with TestClient(app) as client:

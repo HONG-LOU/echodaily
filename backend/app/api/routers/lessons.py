@@ -4,6 +4,8 @@ from fastapi import APIRouter
 
 from app.api.dependencies import DbSession, daily_message_client, lesson_repository
 from app.core.errors import NotFoundError
+from app.db.models import Lesson
+from app.integrations.deepseek_daily_message_client import GeneratedLessonCandidate
 from app.schemas.lesson import LessonResponseSchema
 
 router = APIRouter(prefix="/lessons", tags=["lessons"])
@@ -26,37 +28,22 @@ async def get_recent_lessons(session: DbSession) -> list[LessonResponseSchema]:
         current_day=current_day,
         limit=MAX_RECENT_LESSONS,
     )
-    if not lessons:
-        return []
-    if len(lessons) >= MAX_RECENT_LESSONS:
-        return [LessonResponseSchema.model_validate(lesson) for lesson in lessons[:MAX_RECENT_LESSONS]]
-
-    ai_seed = await _build_ai_seed_text(session=session, current_day=current_day)
-    expanded: list[LessonResponseSchema] = []
-    for index in range(MAX_RECENT_LESSONS):
-        base_lesson = lessons[index % len(lessons)]
-        expanded.append(
-            LessonResponseSchema(
-                id=base_lesson.id,
-                title=base_lesson.title,
-                subtitle=base_lesson.subtitle,
-                pack_name=base_lesson.pack_name,
-                english_text=base_lesson.english_text,
-                translation=base_lesson.translation,
-                scenario=base_lesson.scenario,
-                mode_hint=_build_rotated_hint(
-                    original_hint=base_lesson.mode_hint,
-                    ai_seed=ai_seed,
-                    index=index,
-                ),
-                tags=base_lesson.tags,
-                difficulty=base_lesson.difficulty,
-                estimated_seconds=base_lesson.estimated_seconds,
-                audio_url=base_lesson.audio_url,
-                theme_tone=base_lesson.theme_tone,
-            )
+    if len(lessons) < MAX_RECENT_LESSONS:
+        generated_lessons = await _generate_and_store_lessons(
+            session=session,
+            current_day=current_day,
+            existing_lessons=lessons,
+            target_count=MAX_RECENT_LESSONS,
         )
-    return expanded
+        if generated_lessons:
+            await lesson_repository.add_many(session, generated_lessons)
+            await session.commit()
+            lessons = await lesson_repository.list_recent(
+                session,
+                current_day=current_day,
+                limit=MAX_RECENT_LESSONS,
+            )
+    return [LessonResponseSchema.model_validate(lesson) for lesson in lessons[:MAX_RECENT_LESSONS]]
 
 
 @router.get("/{lesson_id}", response_model=LessonResponseSchema)
@@ -67,30 +54,117 @@ async def get_lesson(lesson_id: str, session: DbSession) -> LessonResponseSchema
     return LessonResponseSchema.model_validate(lesson)
 
 
-async def _build_ai_seed_text(*, session: DbSession, current_day: date) -> str:
-    lesson = await lesson_repository.get_today(
-        session=session,
-        current_day=current_day,
-    )
-    if lesson is None:
-        return "今天先慢半拍，清晰比速度更重要。"
+async def _generate_and_store_lessons(
+    *,
+    session: DbSession,
+    current_day: date,
+    existing_lessons: list[Lesson],
+    target_count: int,
+) -> list[Lesson]:
+    missing_count = max(0, target_count - len(existing_lessons))
+    if missing_count == 0:
+        return []
+    seed_lesson = await lesson_repository.get_today(session, current_day=current_day)
+    if seed_lesson is None and existing_lessons:
+        seed_lesson = existing_lessons[0]
+    if seed_lesson is None:
+        return []
+
+    # Keep ids stable for a day and avoid duplicate inserts.
+    generated_ids = [
+        f"lesson-ai-{current_day.strftime('%Y%m%d')}-{idx:03d}"
+        for idx in range(missing_count)
+    ]
+    existing_ids = {lesson.id for lesson in existing_lessons}
+    missing_ids = [lesson_id for lesson_id in generated_ids if lesson_id not in existing_ids]
+    if not missing_ids:
+        return []
+
     try:
-        generated = await daily_message_client.generate_message(
+        candidates = await daily_message_client.generate_lesson_candidates(
             current_day=current_day,
-            lesson=lesson,
+            seed_lesson=seed_lesson,
+            count=len(missing_ids),
         )
-        return generated.text
+        return _build_generated_models(
+            current_day=current_day,
+            generated_ids=missing_ids,
+            candidates=candidates,
+        )
     except Exception:
-        return "今天先慢半拍，清晰比速度更重要。"
+        return _build_fallback_models(
+            seed_lesson=seed_lesson,
+            current_day=current_day,
+            generated_ids=missing_ids,
+        )
 
 
-def _build_rotated_hint(*, original_hint: str, ai_seed: str, index: int) -> str:
-    stage = (index % 5) + 1
-    suffixes = (
-        "先拆开关键词再连读整句。",
-        "重音先拉开，尾音要收稳。",
-        "这遍重点放在停连和节奏。",
-        "主元音拉满，辅音收干净。",
-        "嘴型到位后再提一点语速。",
+def _build_generated_models(
+    *,
+    current_day: date,
+    generated_ids: list[str],
+    candidates: list[GeneratedLessonCandidate],
+) -> list[Lesson]:
+    lessons: list[Lesson] = []
+    for index, candidate in enumerate(candidates):
+        if index >= len(generated_ids):
+            break
+        lessons.append(
+            Lesson(
+                id=generated_ids[index],
+                title=candidate.title,
+                subtitle=candidate.subtitle,
+                pack_name=candidate.pack_name,
+                english_text=candidate.english_text,
+                translation=candidate.translation,
+                scenario=candidate.scenario,
+                mode_hint=candidate.mode_hint,
+                blind_box_prompt=candidate.blind_box_prompt,
+                tags=candidate.tags,
+                difficulty=candidate.difficulty,
+                estimated_seconds=candidate.estimated_seconds,
+                audio_url=None,
+                poster_blurb=candidate.poster_blurb,
+                theme_tone=candidate.theme_tone,
+                published_on=current_day,
+            )
+        )
+    return lessons
+
+
+def _build_fallback_models(
+    *,
+    seed_lesson: Lesson,
+    current_day: date,
+    generated_ids: list[str],
+) -> list[Lesson]:
+    patterns = (
+        ("说慢一点，意思会更清楚。", "Speak a little slower, and your meaning becomes clearer."),
+        ("先把重音放对，再提语速。", "Place your stress first, then raise your speed."),
+        ("一句读顺了，情绪就稳了。", "When one sentence flows, your mood settles."),
+        ("温柔地说，也能很有力量。", "A gentle voice can still carry great strength."),
     )
-    return f"{original_hint} 第{stage}轮：{suffixes[index % len(suffixes)]} {ai_seed}"
+    lessons: list[Lesson] = []
+    for index, lesson_id in enumerate(generated_ids):
+        zh, en = patterns[index % len(patterns)]
+        lessons.append(
+            Lesson(
+                id=lesson_id,
+                title=f"AI Daily Line {index + 1}",
+                subtitle="AI 句库 · 当日生成",
+                pack_name="AI 每日精选",
+                english_text=en,
+                translation=zh,
+                scenario=seed_lesson.scenario,
+                mode_hint=seed_lesson.mode_hint,
+                blind_box_prompt=seed_lesson.blind_box_prompt,
+                tags=["AI句库", "每日更新"],
+                difficulty=seed_lesson.difficulty,
+                estimated_seconds=seed_lesson.estimated_seconds,
+                audio_url=None,
+                poster_blurb=seed_lesson.poster_blurb,
+                theme_tone=seed_lesson.theme_tone,
+                published_on=current_day,
+            )
+        )
+    return lessons

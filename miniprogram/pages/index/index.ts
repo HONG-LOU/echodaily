@@ -9,6 +9,7 @@ interface HomePageData {
   playingOriginal: boolean;
   recentLessons: Lesson[];
   currentLessonIndex: number;
+  swipeIndicators: number[];
 }
 
 type HomePageCustom = {
@@ -17,6 +18,7 @@ type HomePageCustom = {
   playOriginalAudio: () => void;
   startPractice: (event: WechatMiniprogram.BaseEvent) => void;
   onSwiperChange: (event: WechatMiniprogram.SwiperChange) => void;
+  updateSwipeIndicators: (currentIndex: number, total: number) => void;
   openRecentReport: (event: WechatMiniprogram.BaseEvent) => void;
   handleRetry: () => void;
 };
@@ -30,6 +32,7 @@ Page<HomePageData, HomePageCustom>({
     playingOriginal: false,
     recentLessons: [],
     currentLessonIndex: 0,
+    swipeIndicators: [],
   },
 
   ttsAudioContext: null,
@@ -79,9 +82,11 @@ Page<HomePageData, HomePageCustom>({
         dashboard,
         recentLessons: safeRecentLessons,
         currentLessonIndex: 0,
+        swipeIndicators: [],
         latestScore: dashboard.recent_scores[0] || null,
         loading: false,
       });
+      this.updateSwipeIndicators(0, safeRecentLessons.length);
     } catch (error) {
       const message = error instanceof Error ? error.message : "首页加载失败，请稍后重试。";
       this.setData({
@@ -128,13 +133,39 @@ Page<HomePageData, HomePageCustom>({
   },
 
   onSwiperChange(event) {
+    const nextIndex = event.detail.current;
     this.setData({
-      currentLessonIndex: event.detail.current,
+      currentLessonIndex: nextIndex,
     });
+    this.updateSwipeIndicators(nextIndex, this.data.recentLessons.length);
     if (this.data.playingOriginal) {
       this.ttsAudioContext?.stop();
       this.setData({ playingOriginal: false });
     }
+  },
+
+  updateSwipeIndicators(currentIndex, total) {
+    const maxDots = 6;
+    if (total <= 0) {
+      this.setData({ swipeIndicators: [] });
+      return;
+    }
+
+    if (total <= maxDots) {
+      this.setData({
+        swipeIndicators: Array.from({ length: total }, (_, index) => index),
+      });
+      return;
+    }
+
+    const half = Math.floor(maxDots / 2);
+    let start = Math.max(0, currentIndex - half);
+    if (start + maxDots > total) {
+      start = total - maxDots;
+    }
+    this.setData({
+      swipeIndicators: Array.from({ length: maxDots }, (_, index) => start + index),
+    });
   },
 
   startPractice(event) {

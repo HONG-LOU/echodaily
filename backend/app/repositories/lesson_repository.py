@@ -9,6 +9,12 @@ from app.db.models import Lesson
 
 
 class LessonRepository:
+    async def add_many(self, session: AsyncSession, lessons: list[Lesson]) -> None:
+        if not lessons:
+            return
+        session.add_all(lessons)
+        await session.flush()
+
     async def get_today(self, session: AsyncSession, *, current_day: date) -> Lesson | None:
         exact_lesson = await self._get_exact_published_lesson(
             session,
