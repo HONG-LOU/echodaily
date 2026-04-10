@@ -79,3 +79,21 @@ class AssessmentRepository:
         result = await session.scalars(statement)
         # Convert date objects to YYYY-MM-DD string format
         return [str(d) for d in result.all() if d]
+
+    async def count_by_user_between(
+        self,
+        session: AsyncSession,
+        user_id: str,
+        *,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> int:
+        statement = (
+            select(func.count())
+            .select_from(Submission)
+            .where(Submission.user_id == user_id)
+            .where(Submission.created_at >= start_time)
+            .where(Submission.created_at < end_time)
+        )
+        value = await session.scalar(statement)
+        return int(value or 0)

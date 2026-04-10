@@ -87,12 +87,15 @@ Component({
           ctx.fillText(`@${this.data.nickname}`, 20, 240);
           ctx.fillText(`连续打卡 ${this.data.streakDays} 天`, 20, 270);
 
-          // Draw QR code placeholder
+          // Draw mini program search hint
           ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(200, 380, 80, 80);
-          ctx.fillStyle = '#BDC3C7';
+          ctx.fillRect(20, 360, 260, 88);
+          ctx.fillStyle = '#4A5568';
+          ctx.font = '14px sans-serif';
+          ctx.fillText('微信小程序搜索「语轨」', 28, 398);
+          ctx.fillStyle = '#7F8C8D';
           ctx.font = '12px sans-serif';
-          ctx.fillText('扫码练习', 215, 425);
+          ctx.fillText('打开后继续今日跟读练习', 28, 424);
 
           // Export to temp file
           setTimeout(() => {

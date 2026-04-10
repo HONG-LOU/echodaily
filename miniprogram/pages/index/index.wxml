@@ -48,8 +48,13 @@
       </view>
 
       <!-- Lesson Swiper -->
-      <swiper class="lesson-swiper" bindchange="onSwiperChange" current="{{currentLessonIndex}}">
-        <block wx:for="{{recentLessons}}" wx:key="id" wx:for-item="lesson">
+      <swiper
+        class="lesson-swiper"
+        bindchange="onSwiperChange"
+        current="{{currentLessonIndex}}"
+        circular="{{recentLessons.length > 1}}"
+      >
+        <block wx:for="{{recentLessons}}" wx:key="index" wx:for-item="lesson" wx:for-index="index">
           <swiper-item>
             <view class="glass-card lesson-card">
               <view class="lesson-header">
@@ -69,6 +74,15 @@
                 <block wx:for="{{lesson.tags}}" wx:key="*this" wx:for-index="index">
                   <text class="chip" wx:if="{{index < 3}}">{{item}}</text>
                 </block>
+              </view>
+
+              <view class="swipe-guide" wx:if="{{recentLessons.length > 1}}">
+                <text class="swipe-guide-text">← 左右滑动切换句子 →</text>
+                <view class="swipe-dots">
+                  <block wx:for="{{recentLessons}}" wx:key="index">
+                    <view class="swipe-dot {{index === currentLessonIndex ? 'swipe-dot-active' : ''}}"></view>
+                  </block>
+                </view>
               </view>
 
               <view class="lesson-hint">

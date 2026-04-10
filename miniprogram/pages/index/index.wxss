@@ -132,8 +132,39 @@
   justify-content: flex-start;
 }
 
-.lesson-hint {
+.swipe-guide {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 88rpx;
+}
+
+.swipe-guide-text {
+  font-size: 22rpx;
+  color: var(--ink-soft);
+}
+
+.swipe-dots {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.swipe-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: rgba(120, 127, 140, 0.35);
+}
+
+.swipe-dot-active {
+  background: var(--ink-strong);
+}
+
+.lesson-hint {
   background: var(--surface-soft);
   border-radius: 24rpx;
   padding: 24rpx;

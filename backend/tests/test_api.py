@@ -137,6 +137,29 @@ def test_lessons_endpoint_returns_exact_schedule(monkeypatch) -> None:
     assert payload["id"] == "lesson-office-kind"
 
 
+def test_recent_lessons_endpoint_returns_fifty_cards(monkeypatch) -> None:
+    freeze_today(monkeypatch, date(2026, 4, 10))
+    monkeypatch.setattr(
+        daily_message_client,
+        "generate_message",
+        AsyncMock(
+            return_value=GeneratedDailyMessage(
+                text="今天这句先读清楚，语气自然就会更稳。",
+                provider="deepseek",
+                model="deepseek-chat",
+            )
+        ),
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1/lessons/recent")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 50
+    assert all("mode_hint" in item for item in payload)
+
+
 def test_assessment_creation_returns_report() -> None:
     oral_evaluation_client.evaluate_sentence = AsyncMock(
         return_value=OralEvaluationResult(
@@ -210,3 +233,37 @@ def test_assessment_creation_surfaces_service_unavailable_message() -> None:
     error_payload = response.json()
     assert error_payload["code"] == "speech_assessment_account_unavailable"
     assert "未欠费" in error_payload["message"]
+
+
+def test_assessment_creation_limited_to_ten_times_per_day() -> None:
+    oral_evaluation_client.evaluate_sentence = AsyncMock(
+        return_value=OralEvaluationResult(
+            session_id="session-limit",
+            request_id="request-limit",
+            overall_score=80,
+            pronunciation_score=80,
+            fluency_score=80,
+            completeness_score=80,
+            stress_score=80,
+            recognized_text="Test sentence.",
+            words=[],
+        )
+    )
+    payload = {
+        "lesson_id": "lesson-office-kind",
+        "duration_seconds": 20,
+        "audio_format": "mp3",
+        "audio_base64": "YXVkaW8=",
+    }
+
+    with TestClient(app) as client:
+        headers = login_and_get_headers(client, openid="openid-assessment-limit", nickname="Mia")
+        for _ in range(10):
+            response = client.post("/api/v1/assessments", json=payload, headers=headers)
+            assert response.status_code == 201
+
+        exceeded_response = client.post("/api/v1/assessments", json=payload, headers=headers)
+
+    assert exceeded_response.status_code == 400
+    error_payload = exceeded_response.json()
+    assert error_payload["code"] == "daily_assessment_limit_reached"

@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import NotFoundError
+from app.core.errors import BadRequestError, NotFoundError
 from app.db.models import Lesson, Submission, UserProfile
 from app.integrations.tencent_oral_evaluation_client import (
     EvaluatedWord,
@@ -23,6 +23,7 @@ from app.schemas.assessment import (
 
 MATCH_TAG_MISSING = 2
 MATCH_TAG_MISREAD = 3
+DAILY_ASSESSMENT_LIMIT = 10
 
 
 class AssessmentService:
@@ -42,6 +43,19 @@ class AssessmentService:
         current_user: UserProfile,
         payload: AssessmentCreateSchema,
     ) -> AssessmentDetailSchema:
+        created_at = datetime.now(UTC)
+        daily_count = await self.assessment_repository.count_by_user_between(
+            session,
+            current_user.id,
+            start_time=self._day_start(created_at),
+            end_time=self._day_end(created_at),
+        )
+        if daily_count >= DAILY_ASSESSMENT_LIMIT:
+            raise BadRequestError(
+                "今天练习次数已达上限（10次），明天再来继续加油。",
+                code="daily_assessment_limit_reached",
+            )
+
         lesson = await self.lesson_repository.get_by_id(session, payload.lesson_id)
         if lesson is None:
             raise NotFoundError("Lesson not found.", code="lesson_not_found")
@@ -61,7 +75,6 @@ class AssessmentService:
             overall_score=evaluation.overall_score,
             highlights=highlights,
         )
-        created_at = datetime.now(UTC)
 
         submission = Submission(
             id=f"assessment-{uuid4().hex[:16]}",
@@ -302,3 +315,10 @@ class AssessmentService:
         if value.tzinfo is None:
             return value.replace(tzinfo=UTC)
         return value.astimezone(UTC)
+
+    def _day_start(self, value: datetime) -> datetime:
+        utc_value = self._to_utc_datetime(value)
+        return utc_value.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    def _day_end(self, value: datetime) -> datetime:
+        return self._day_start(value) + timedelta(days=1)
