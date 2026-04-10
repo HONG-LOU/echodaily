@@ -225,11 +225,7 @@ class AssessmentService:
         if word.match_tag == MATCH_TAG_MISSING:
             return "这一词没有被完整识别出来，句子完整度被拉低了。"
         if word.match_tag == MATCH_TAG_MISREAD:
-            if (
-                word.expected_ipa
-                and word.observed_ipa
-                and word.expected_ipa != word.observed_ipa
-            ):
+            if word.expected_ipa and word.observed_ipa and word.expected_ipa != word.observed_ipa:
                 return f"检测到 {word.observed_ipa}，与标准 {word.expected_ipa} 有偏差。"
             return "这一词与标准读法的匹配度偏低。"
         if word.stress_mismatch_count > 0:

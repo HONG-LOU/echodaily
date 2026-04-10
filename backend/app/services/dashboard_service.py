@@ -48,9 +48,7 @@ class DashboardService:
             start_time=datetime.now(UTC) - timedelta(days=7),
         )
         weekly_minutes = (
-            0
-            if weekly_duration_seconds == 0
-            else max(1, round(weekly_duration_seconds / 60))
+            0 if weekly_duration_seconds == 0 else max(1, round(weekly_duration_seconds / 60))
         )
         quick_stats = [
             StatCardSchema(

@@ -219,7 +219,7 @@ class TencentOralEvaluationClient:
                             "腾讯云口语评测未返回最终结果，请稍后重试。",
                             code="speech_assessment_failed",
                         )
-        except asyncio.TimeoutError as exc:
+        except TimeoutError as exc:
             raise IntegrationError(
                 "腾讯云口语评测超时，请稍后重试。",
                 code="speech_assessment_timeout",
@@ -441,7 +441,9 @@ class TencentOralEvaluationClient:
         return EvaluatedWord(
             word=str(self._get_field_value(item, "Word", "") or "").strip(),
             match_tag=int(self._get_field_value(item, "MatchTag", 0) or 0),
-            pronunciation_score=self._normalize_percentage(self._get_field_value(item, "PronAccuracy")),
+            pronunciation_score=self._normalize_percentage(
+                self._get_field_value(item, "PronAccuracy")
+            ),
             fluency_score=self._normalize_unit_score(self._get_field_value(item, "PronFluency")),
             expected_ipa=self._format_ipa(expected_phones),
             observed_ipa=self._format_ipa(observed_phones),
@@ -450,9 +452,7 @@ class TencentOralEvaluationClient:
 
     def _build_recognized_text(self, words: list[EvaluatedWord]) -> str:
         recognized_words = [
-            item.word
-            for item in words
-            if item.word and item.match_tag != MATCH_TAG_MISSING
+            item.word for item in words if item.word and item.match_tag != MATCH_TAG_MISSING
         ]
         raw_text = " ".join(recognized_words).strip()
         if not raw_text:

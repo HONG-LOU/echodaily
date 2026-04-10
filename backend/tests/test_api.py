@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+from datetime import date
 from pathlib import Path
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -18,6 +19,8 @@ os.environ["TENCENTCLOUD_SECRET_ID"] = "test-secret-id"
 os.environ["TENCENTCLOUD_SECRET_KEY"] = "test-secret-key"
 
 from app.api.dependencies import oral_evaluation_client, wechat_auth_client  # noqa: E402
+from app.api.routers import dashboard as dashboard_router  # noqa: E402
+from app.api.routers import lessons as lessons_router  # noqa: E402
 from app.core.errors import ServiceUnavailableError  # noqa: E402
 from app.integrations.tencent_oral_evaluation_client import (  # noqa: E402
     EvaluatedWord,
@@ -25,6 +28,16 @@ from app.integrations.tencent_oral_evaluation_client import (  # noqa: E402
 )
 from app.integrations.wechat_auth_client import WechatSessionData  # noqa: E402
 from app.main import app  # noqa: E402
+
+
+def freeze_today(monkeypatch, frozen_day: date) -> None:
+    class FrozenDate(date):
+        @classmethod
+        def today(cls) -> date:
+            return frozen_day
+
+    monkeypatch.setattr(dashboard_router, "date", FrozenDate)
+    monkeypatch.setattr(lessons_router, "date", FrozenDate)
 
 
 def login_and_get_headers(
@@ -58,17 +71,30 @@ def test_dashboard_requires_login() -> None:
     assert response.json()["code"] == "missing_access_token"
 
 
-def test_dashboard_endpoint_returns_today_lesson() -> None:
+def test_dashboard_endpoint_returns_today_lesson(monkeypatch) -> None:
+    freeze_today(monkeypatch, date(2026, 4, 10))
+
     with TestClient(app) as client:
         headers = login_and_get_headers(client, openid="openid-dashboard", nickname="Mia")
         response = client.get("/api/v1/dashboard", headers=headers)
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["today_lesson"]["id"] == "lesson-office-kind"
+    assert payload["today_lesson"]["id"] == "lesson-bbc-morning"
     assert payload["user"]["nickname"] == "Mia"
     assert "recent_scores" in payload
     assert "challenge_spotlight" not in payload
+
+
+def test_lessons_endpoint_returns_exact_schedule(monkeypatch) -> None:
+    freeze_today(monkeypatch, date(2026, 4, 9))
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1/lessons/today")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["id"] == "lesson-office-kind"
 
 
 def test_assessment_creation_returns_report() -> None:

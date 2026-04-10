@@ -7,7 +7,9 @@ from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentClo
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.core.errors import IntegrationError, ServiceUnavailableError  # noqa: E402
-from app.integrations.tencent_oral_evaluation_client import TencentOralEvaluationClient  # noqa: E402
+from app.integrations.tencent_oral_evaluation_client import (
+    TencentOralEvaluationClient,  # noqa: E402
+)
 
 
 def test_map_sdk_exception_returns_actionable_account_unavailable_error() -> None:
