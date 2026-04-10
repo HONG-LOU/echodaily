@@ -85,47 +85,50 @@
         </view>
       </view>
 
-      <!-- Check-in Calendar -->
-      <view class="glass-card calendar-card">
-        <view class="calendar-header">
-          <text class="eyebrow">近30天打卡</text>
+      <!-- Bottom Grid -->
+      <view class="spotlight-grid">
+        <!-- Check-in Calendar -->
+        <view class="glass-card calendar-card">
+          <view class="calendar-header">
+            <text class="eyebrow">近30天打卡</text>
+          </view>
+          <view class="calendar-grid">
+            <block wx:for="{{calendarDays}}" wx:key="date">
+              <view class="calendar-cell {{item.active ? 'active' : ''}}"></view>
+            </block>
+          </view>
         </view>
-        <view class="calendar-grid">
-          <block wx:for="{{calendarDays}}" wx:key="date">
-            <view class="calendar-cell {{item.active ? 'active' : ''}}"></view>
-          </block>
-        </view>
-      </view>
 
-      <!-- Recent History -->
-      <view class="glass-card history-card">
-        <view class="history-header">
-          <text class="eyebrow">最近两次</text>
-          <text class="history-note">仅保留摘要</text>
-        </view>
-        
-        <view class="history-list">
-          <block wx:if="{{latestPractice}}">
-            <view class="history-item" bindtap="openRecentReport" data-assessment-id="{{latestPractice.assessment_id}}">
-              <view class="history-info">
-                <text class="history-title">{{latestPractice.lesson_title}}</text>
-                <text class="history-time">{{latestPractice.practiced_at}}</text>
+        <!-- Recent History -->
+        <view class="glass-card history-card">
+          <view class="history-header">
+            <text class="eyebrow">最近两次</text>
+            <text class="history-note">仅保留摘要</text>
+          </view>
+          
+          <view class="history-list">
+            <block wx:if="{{latestPractice}}">
+              <view class="history-item" bindtap="openRecentReport" data-assessment-id="{{latestPractice.assessment_id}}">
+                <view class="history-info">
+                  <text class="history-title">{{latestPractice.lesson_title}}</text>
+                  <text class="history-time">{{latestPractice.practiced_at}}</text>
+                </view>
+                <view class="history-score">{{latestPractice.score}}</view>
               </view>
-              <view class="history-score">{{latestPractice.score}}</view>
-            </view>
-          </block>
-          <block wx:if="{{secondPractice}}">
-            <view class="history-item" bindtap="openRecentReport" data-assessment-id="{{secondPractice.assessment_id}}">
-              <view class="history-info">
-                <text class="history-title">{{secondPractice.lesson_title}}</text>
-                <text class="history-time">{{secondPractice.practiced_at}}</text>
+            </block>
+            <block wx:if="{{secondPractice}}">
+              <view class="history-item" bindtap="openRecentReport" data-assessment-id="{{secondPractice.assessment_id}}">
+                <view class="history-info">
+                  <text class="history-title">{{secondPractice.lesson_title}}</text>
+                  <text class="history-time">{{secondPractice.practiced_at}}</text>
+                </view>
+                <view class="history-score">{{secondPractice.score}}</view>
               </view>
-              <view class="history-score">{{secondPractice.score}}</view>
-            </view>
-          </block>
-          <block wx:if="{{!latestPractice}}">
-            <text class="empty-state-text">做完练习后，这里会保留最近报告。</text>
-          </block>
+            </block>
+            <block wx:if="{{!latestPractice}}">
+              <text class="empty-state-text">做完练习后，这里会保留最近报告。</text>
+            </block>
+          </view>
         </view>
       </view>
     </block>

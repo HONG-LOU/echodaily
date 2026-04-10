@@ -180,6 +180,7 @@
   flex-direction: column;
   gap: 12rpx;
   flex-shrink: 0;
+  min-height: 180rpx;
 }
 
 .calendar-header {
@@ -210,7 +211,7 @@
   gap: 16rpx;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-height: 180rpx;
 }
 
 .history-header {
@@ -221,14 +222,14 @@
 }
 
 .history-note {
-  font-size: 22rpx;
+  font-size: 20rpx;
   color: var(--ink-soft);
 }
 
 .history-list {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: 12rpx;
   overflow-y: auto;
 }
 
@@ -236,21 +237,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24rpx;
+  padding: 16rpx;
   background: var(--surface-soft);
-  border-radius: 24rpx;
+  border-radius: 16rpx;
 }
 
 .history-info {
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  gap: 4rpx;
   flex: 1;
   min-width: 0;
 }
 
 .history-title {
-  font-size: 28rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: var(--ink-strong);
   white-space: nowrap;
@@ -259,18 +260,18 @@
 }
 
 .history-time {
-  font-size: 22rpx;
+  font-size: 20rpx;
   color: var(--ink-soft);
 }
 
 .history-score {
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: 700;
   color: var(--ink-strong);
   background: var(--surface-card);
-  padding: 12rpx 24rpx;
+  padding: 8rpx 16rpx;
   border-radius: 100rpx;
-  margin-left: 16rpx;
+  margin-left: 12rpx;
 }
 
 .empty-state-text {

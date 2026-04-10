@@ -71,14 +71,22 @@ class AssessmentRepository:
         start_time: datetime,
     ) -> list[str]:
         statement = (
-            select(func.distinct(func.date(Submission.created_at)))
+            select(Submission.created_at)
             .where(Submission.user_id == user_id)
             .where(Submission.created_at >= start_time)
-            .order_by(func.date(Submission.created_at).desc())
+            .order_by(Submission.created_at.desc())
         )
         result = await session.scalars(statement)
-        # Convert date objects to YYYY-MM-DD string format
-        return [str(d) for d in result.all() if d]
+        
+        from datetime import timezone, timedelta
+        dates = set()
+        for dt in result.all():
+            if dt:
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                local_dt = dt.astimezone(timezone(timedelta(hours=8)))
+                dates.add(local_dt.strftime("%Y-%m-%d"))
+        return sorted(list(dates), reverse=True)
 
     async def count_by_user_between(
         self,
