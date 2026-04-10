@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     database_url: str = "sqlite+aiosqlite:///./data/echodaily.db"
     cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["*"])
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_api_key: str | None = None
+    deepseek_model: str = "deepseek-chat"
+    deepseek_request_timeout_seconds: int = Field(default=20, ge=5, le=120)
     wechat_app_id: str | None = None
     wechat_app_secret: str | None = None
     auth_session_days: int = Field(default=30, ge=1, le=365)
@@ -53,6 +57,7 @@ class Settings(BaseSettings):
     @field_validator(
         "wechat_app_id",
         "wechat_app_secret",
+        "deepseek_api_key",
         "tencentcloud_secret_id",
         "tencentcloud_secret_key",
         "tencentcloud_app_id",
@@ -65,6 +70,22 @@ class Settings(BaseSettings):
             return None
         stripped = str(value).strip()
         return stripped or None
+
+    @field_validator("deepseek_base_url", mode="before")
+    @classmethod
+    def normalize_deepseek_base_url(cls, value: Any) -> str:
+        if value is None:
+            return "https://api.deepseek.com"
+        stripped = str(value).strip().rstrip("/")
+        return stripped or "https://api.deepseek.com"
+
+    @field_validator("deepseek_model", mode="before")
+    @classmethod
+    def normalize_deepseek_model(cls, value: Any) -> str:
+        if value is None:
+            return "deepseek-chat"
+        stripped = str(value).strip()
+        return stripped or "deepseek-chat"
 
     @field_validator("tencentcloud_soe_region", mode="before")
     @classmethod

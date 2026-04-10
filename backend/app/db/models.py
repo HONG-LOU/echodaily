@@ -34,6 +34,21 @@ class Lesson(Base):
     published_on: Mapped[date] = mapped_column(Date, index=True)
 
 
+class DailyHomepageMessage(Base):
+    __tablename__ = "daily_homepage_messages"
+
+    message_date: Mapped[date] = mapped_column(Date, primary_key=True)
+    message_text: Mapped[str] = mapped_column(String(160))
+    provider: Mapped[str] = mapped_column(String(32))
+    model_name: Mapped[str] = mapped_column(String(80))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+        onupdate=utcnow,
+    )
+
+
 class UserProfile(Base):
     __tablename__ = "user_profiles"
 

@@ -18,10 +18,15 @@ os.environ["WECHAT_APP_SECRET"] = "wx-test-secret"
 os.environ["TENCENTCLOUD_SECRET_ID"] = "test-secret-id"
 os.environ["TENCENTCLOUD_SECRET_KEY"] = "test-secret-key"
 
-from app.api.dependencies import oral_evaluation_client, wechat_auth_client  # noqa: E402
+from app.api.dependencies import (  # noqa: E402
+    daily_message_client,
+    oral_evaluation_client,
+    wechat_auth_client,
+)
 from app.api.routers import dashboard as dashboard_router  # noqa: E402
 from app.api.routers import lessons as lessons_router  # noqa: E402
 from app.core.errors import ServiceUnavailableError  # noqa: E402
+from app.integrations.deepseek_daily_message_client import GeneratedDailyMessage  # noqa: E402
 from app.integrations.tencent_oral_evaluation_client import (  # noqa: E402
     EvaluatedWord,
     OralEvaluationResult,
@@ -73,6 +78,17 @@ def test_dashboard_requires_login() -> None:
 
 def test_dashboard_endpoint_returns_today_lesson(monkeypatch) -> None:
     freeze_today(monkeypatch, date(2026, 4, 10))
+    monkeypatch.setattr(
+        daily_message_client,
+        "generate_message",
+        AsyncMock(
+            return_value=GeneratedDailyMessage(
+                text="今天先把这一句读顺，状态会慢慢回来。",
+                provider="deepseek",
+                model="deepseek-chat",
+            )
+        ),
+    )
 
     with TestClient(app) as client:
         headers = login_and_get_headers(client, openid="openid-dashboard", nickname="Mia")
@@ -82,8 +98,32 @@ def test_dashboard_endpoint_returns_today_lesson(monkeypatch) -> None:
     payload = response.json()
     assert payload["today_lesson"]["id"] == "lesson-bbc-morning"
     assert payload["user"]["nickname"] == "Mia"
+    assert payload["daily_message"] == "今天先把这一句读顺，状态会慢慢回来。"
     assert "recent_scores" in payload
     assert "challenge_spotlight" not in payload
+
+
+def test_dashboard_endpoint_caches_daily_message_for_the_same_day(monkeypatch) -> None:
+    freeze_today(monkeypatch, date(2026, 4, 11))
+    generate_message = AsyncMock(
+        return_value=GeneratedDailyMessage(
+            text="先把今天这句读稳，节奏感比着急更重要。",
+            provider="deepseek",
+            model="deepseek-chat",
+        )
+    )
+    monkeypatch.setattr(daily_message_client, "generate_message", generate_message)
+
+    with TestClient(app) as client:
+        headers = login_and_get_headers(client, openid="openid-dashboard-cache", nickname="Noa")
+        first_response = client.get("/api/v1/dashboard", headers=headers)
+        second_response = client.get("/api/v1/dashboard", headers=headers)
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.json()["daily_message"] == "先把今天这句读稳，节奏感比着急更重要。"
+    assert second_response.json()["daily_message"] == "先把今天这句读稳，节奏感比着急更重要。"
+    assert generate_message.await_count == 1
 
 
 def test_lessons_endpoint_returns_exact_schedule(monkeypatch) -> None:

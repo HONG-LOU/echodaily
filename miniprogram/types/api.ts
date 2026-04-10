@@ -40,6 +40,7 @@ export interface RecentScore {
 }
 
 export interface DashboardResponse {
+  daily_message: string;
   user: DashboardUser;
   today_lesson: Lesson;
   quick_stats: StatCard[];

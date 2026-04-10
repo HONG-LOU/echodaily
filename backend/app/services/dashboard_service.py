@@ -15,6 +15,7 @@ from app.schemas.dashboard import (
     RecentScoreSchema,
     StatCardSchema,
 )
+from app.services.daily_message_service import DailyMessageService
 
 
 class DashboardService:
@@ -22,9 +23,11 @@ class DashboardService:
         self,
         lesson_repository: LessonRepository,
         assessment_repository: AssessmentRepository,
+        daily_message_service: DailyMessageService,
     ) -> None:
         self.lesson_repository = lesson_repository
         self.assessment_repository = assessment_repository
+        self.daily_message_service = daily_message_service
 
     async def get_dashboard(
         self,
@@ -37,6 +40,11 @@ class DashboardService:
         if lesson is None:
             raise NotFoundError("No lesson available yet.", code="lesson_not_found")
 
+        daily_message = await self.daily_message_service.get_or_create_message(
+            session,
+            current_day=current_day,
+            lesson=lesson,
+        )
         recent_submissions = await self.assessment_repository.list_recent_by_user(
             session,
             current_user.id,
@@ -78,6 +86,7 @@ class DashboardService:
         ]
 
         return DashboardResponseSchema(
+            daily_message=daily_message,
             user=DashboardUserSchema(
                 id=current_user.id,
                 nickname=current_user.nickname,

@@ -47,6 +47,7 @@ class RecentScoreSchema(BaseModel):
 
 
 class DashboardResponseSchema(BaseModel):
+    daily_message: str
     user: DashboardUserSchema
     today_lesson: LessonSpotlightSchema
     quick_stats: list[StatCardSchema]

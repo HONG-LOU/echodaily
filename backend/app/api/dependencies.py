@@ -7,32 +7,45 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import UnauthorizedError
 from app.db.models import UserProfile
 from app.db.session import get_db_session
+from app.integrations.deepseek_daily_message_client import DeepSeekDailyMessageClient
 from app.integrations.tencent_oral_evaluation_client import TencentOralEvaluationClient
 from app.integrations.wechat_auth_client import WechatAuthClient
 from app.repositories.assessment_repository import AssessmentRepository
+from app.repositories.daily_message_repository import DailyMessageRepository
 from app.repositories.lesson_repository import LessonRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.user_session_repository import UserSessionRepository
 from app.services.assessment_service import AssessmentService
 from app.services.auth_service import AuthService
+from app.services.daily_message_service import DailyMessageService
 from app.services.dashboard_service import DashboardService
 from app.services.profile_service import ProfileService
 
 DbSession = Annotated[AsyncSession, Depends(get_db_session)]
 
 assessment_repository = AssessmentRepository()
+daily_message_repository = DailyMessageRepository()
 lesson_repository = LessonRepository()
 user_repository = UserRepository()
 user_session_repository = UserSessionRepository()
+daily_message_client = DeepSeekDailyMessageClient()
 oral_evaluation_client = TencentOralEvaluationClient()
 wechat_auth_client = WechatAuthClient()
 bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def get_daily_message_service() -> DailyMessageService:
+    return DailyMessageService(
+        daily_message_repository=daily_message_repository,
+        deepseek_client=daily_message_client,
+    )
 
 
 def get_dashboard_service() -> DashboardService:
     return DashboardService(
         lesson_repository=lesson_repository,
         assessment_repository=assessment_repository,
+        daily_message_service=get_daily_message_service(),
     )
 
 

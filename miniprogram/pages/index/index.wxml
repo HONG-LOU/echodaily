@@ -25,7 +25,7 @@
         <view class="hero-topbar">
           <view>
             <text class="eyebrow">Today</text>
-            <text class="hero-caption">每天一条，先把真实开口练稳。</text>
+            <text class="hero-caption">{{dashboard.daily_message}}</text>
           </view>
           <view class="avatar-bubble">
             <text class="avatar-letter">{{dashboard.user.avatar_symbol}}</text>
