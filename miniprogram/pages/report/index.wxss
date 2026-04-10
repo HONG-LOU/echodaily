@@ -17,7 +17,6 @@
 }
 
 .score-card {
-  padding: 40rpx 32rpx;
   gap: 32rpx;
 }
 
@@ -113,7 +112,6 @@
 }
 
 .breakdown-card {
-  padding: 40rpx 32rpx;
   gap: 24rpx;
 }
 
@@ -180,7 +178,6 @@
 }
 
 .highlight-card {
-  padding: 40rpx 32rpx;
   gap: 24rpx;
 }
 

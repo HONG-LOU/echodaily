@@ -1,11 +1,10 @@
 .page-shell {
-  padding: 32rpx;
-  gap: 24rpx;
+  padding: 32rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
+  gap: 0;
 }
 
 .practice-card {
   flex: 1;
-  padding: 40rpx 32rpx;
   gap: 24rpx;
   overflow-y: auto;
 }

@@ -68,11 +68,16 @@ Page<HomePageData, HomePageCustom>({
     try {
       const [dashboard, recentLessons] = await Promise.all([
         fetchDashboard(),
-        fetchRecentLessons(),
+        fetchRecentLessons().catch(() => []),
       ]);
+      
+      const safeRecentLessons = recentLessons && recentLessons.length > 0 
+        ? recentLessons 
+        : [dashboard.today_lesson];
+
       this.setData({
         dashboard,
-        recentLessons,
+        recentLessons: safeRecentLessons,
         currentLessonIndex: 0,
         latestScore: dashboard.recent_scores[0] || null,
         loading: false,

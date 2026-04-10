@@ -20,18 +20,20 @@
     <block wx:elif="{{profile}}">
       <!-- Profile Header -->
       <view class="glass-card profile-header">
-        <view class="profile-top">
-          <view class="avatar">{{profile.avatar_symbol}}</view>
-          <view class="profile-info">
-            <text class="title-xl">{{profile.nickname}}</text>
-            <text class="subtitle">{{profile.city}} · {{profile.bio}}</text>
+          <view class="profile-top">
+            <view class="avatar">{{profile.avatar_symbol}}</view>
+            <view class="profile-info">
+              <view class="profile-name-row">
+                <text class="profile-name">{{profile.nickname}}</text>
+                <view class="share-btn" bindtap="openPoster">分享</view>
+              </view>
+              <text class="profile-bio">{{profile.city ? profile.city + ' · ' : ''}}{{profile.bio}}</text>
+            </view>
           </view>
-        </view>
         
         <view class="chip-row">
           <text class="chip">重点音素 {{profile.weak_sound}}</text>
           <text class="chip">累计 {{profile.total_practices}} 次</text>
-          <button class="mini-button" bindtap="openPoster">分享海报</button>
         </view>
 
         <view class="metrics-row">

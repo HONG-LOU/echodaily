@@ -1,11 +1,15 @@
 .page-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 32rpx;
   gap: 24rpx;
+  overflow: hidden;
 }
 
 .header-card {
-  padding: 40rpx 32rpx;
-  gap: 32rpx;
+  gap: 24rpx;
+  flex-shrink: 0;
 }
 
 .header-top {
@@ -22,14 +26,14 @@
 }
 
 .avatar {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 48rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
   background: var(--surface-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: var(--ink-strong);
 }
@@ -39,8 +43,8 @@
   align-items: center;
   justify-content: space-between;
   background: var(--surface-soft);
-  border-radius: 24rpx;
-  padding: 24rpx 32rpx;
+  border-radius: 20rpx;
+  padding: 20rpx 24rpx;
 }
 
 .metric-item {
@@ -51,33 +55,32 @@
 }
 
 .metric-value {
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: 700;
   color: var(--ink-strong);
 }
 
 .metric-label {
-  font-size: 22rpx;
+  font-size: 20rpx;
   color: var(--ink-soft);
 }
 
 .metric-divider {
   width: 2rpx;
-  height: 48rpx;
+  height: 40rpx;
   background: var(--line-soft);
 }
 
 .lesson-swiper {
   flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 600rpx;
 }
 
 .lesson-card {
   height: 100%;
   box-sizing: border-box;
-  padding: 40rpx 32rpx;
-  gap: 16rpx;
+  gap: 12rpx;
   display: flex;
   flex-direction: column;
 }
@@ -153,19 +156,20 @@
 .bottom-section {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: 16rpx;
+  flex-shrink: 0;
 }
 
 .status-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24rpx;
+  gap: 16rpx;
 }
 
 .status-card {
   background: var(--surface-card);
-  border-radius: 32rpx;
-  padding: 24rpx 32rpx;
+  border-radius: 24rpx;
+  padding: 20rpx;
   display: flex;
   flex-direction: column;
   gap: 8rpx;

@@ -8,7 +8,8 @@ page {
   --line-soft: rgba(60, 60, 67, 0.1);
   --accent-primary: #000000;
   
-  height: 100vh;
+  height: 100%;
+  overflow: hidden;
   background: var(--bg-base);
   color: var(--ink-strong);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", sans-serif;
@@ -24,7 +25,7 @@ scroll-view {
 }
 
 .screen {
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -33,15 +34,15 @@ scroll-view {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 32rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
-  gap: 24rpx;
+  padding: 20rpx;
+  gap: 16rpx;
   overflow: hidden;
 }
 
 .glass-card {
   background: var(--surface-card);
-  border-radius: 32rpx;
-  padding: 32rpx;
+  border-radius: 24rpx;
+  padding: 20rpx;
   box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
