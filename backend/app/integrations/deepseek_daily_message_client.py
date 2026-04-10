@@ -211,16 +211,16 @@ class DeepSeekDailyMessageClient:
             "2) 每个元素字段必须完整："
             "title, subtitle, pack_name, english_text, translation, scenario, mode_hint, "
             "blind_box_prompt, tags, difficulty, estimated_seconds, poster_blurb, theme_tone。\n"
-            "3) english_text 必须是自然、真实、可朗读的一句英文；translation 为自然中文。每一张卡片的 english_text 和 translation 必须完全不同。\n"
+            "3) english_text 必须是一段自然、真实、连贯的英语口语表达（包含2-4个长句，约30-60个单词）；translation 为对应的自然中文。每一张卡片的 english_text 和 translation 必须完全不同。\n"
             "4) mode_hint 必须针对当前的 english_text 提供具体的发音或连读提示，每一张卡片的 mode_hint 必须完全不同，不要照抄参考提示。\n"
-            "5) tags 为 2~3 个简短中文标签；estimated_seconds 在 14~30 之间。\n"
+            "5) tags 为 2~3 个简短中文标签；estimated_seconds 在 30~60 之间。\n"
             f"6) title 可以按顺序编号，例如 'Daily English {offset + 1}', 'Daily English {offset + 2}' 等。\n"
             "7) 避免重复内容，不要生成占位符。"
         )
         payload = {
             "model": settings.deepseek_model,
             "temperature": 1.15,
-            "max_tokens": min(8192, 320 * count),
+            "max_tokens": min(8192, 800 * count),
             "messages": [
                 {"role": "system", "content": "你是严格输出 JSON 的课程内容生成器。"},
                 {"role": "user", "content": prompt},
@@ -312,7 +312,7 @@ class DeepSeekDailyMessageClient:
             title = str(item.get("title", "")).strip()
             if not title or not english_text or not translation:
                 continue
-            estimated_seconds = int(item.get("estimated_seconds", 20))
+            estimated_seconds = int(item.get("estimated_seconds", 45))
             candidates.append(
                 GeneratedLessonCandidate(
                     title=title,
@@ -330,7 +330,7 @@ class DeepSeekDailyMessageClient:
                     or "把这句读给未来的你，声音会更坚定。",
                     tags=normalized_tags[:3] or ["每日更新", "真实语料"],
                     difficulty=str(item.get("difficulty", "Intermediate")).strip() or "Intermediate",
-                    estimated_seconds=max(14, min(30, estimated_seconds)),
+                    estimated_seconds=max(30, min(90, estimated_seconds)),
                     poster_blurb=str(
                         item.get("poster_blurb", "你读出的每一句，都会变成更清晰的自己。")
                     ).strip()

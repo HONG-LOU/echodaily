@@ -12,7 +12,8 @@ from app.core.config import get_settings
 from app.core.errors import AppError
 from app.db.seed import seed_database
 from app.db.session import close_db, get_session_factory, init_db
-
+from app.tasks import generate_daily_lessons_task
+import asyncio
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -20,7 +21,18 @@ async def lifespan(_: FastAPI):
     session_factory = get_session_factory()
     async with session_factory() as session:
         await seed_database(session)
+    
+    # Start the background task for daily lesson generation
+    task = asyncio.create_task(generate_daily_lessons_task())
+    
     yield
+    
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+    
     await close_db()
 
 

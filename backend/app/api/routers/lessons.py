@@ -28,21 +28,6 @@ async def get_recent_lessons(session: DbSession) -> list[LessonResponseSchema]:
         current_day=current_day,
         limit=MAX_RECENT_LESSONS,
     )
-    if len(lessons) < MAX_RECENT_LESSONS:
-        generated_lessons = await _generate_and_store_lessons(
-            session=session,
-            current_day=current_day,
-            existing_lessons=lessons,
-            target_count=MAX_RECENT_LESSONS,
-        )
-        if generated_lessons:
-            await lesson_repository.add_many(session, generated_lessons)
-            await session.commit()
-            lessons = await lesson_repository.list_recent(
-                session,
-                current_day=current_day,
-                limit=MAX_RECENT_LESSONS,
-            )
     return [LessonResponseSchema.model_validate(lesson) for lesson in lessons[:MAX_RECENT_LESSONS]]
 
 
@@ -98,7 +83,9 @@ async def _generate_and_store_lessons(
             generated_ids=missing_ids,
             candidates=candidates,
         )
-    except Exception:
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return _build_fallback_models(
             seed_lesson=seed_lesson,
             current_day=current_day,
