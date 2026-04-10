@@ -56,7 +56,7 @@
       >
         <block wx:for="{{recentLessons}}" wx:key="index" wx:for-item="lesson" wx:for-index="index">
           <swiper-item>
-            <scroll-view scroll-y="true" enable-flex="true" class="glass-card lesson-card">
+            <view class="glass-card lesson-card">
               <view class="lesson-header">
                 <text class="lesson-pack">{{lesson.pack_name}}</text>
                 <text class="lesson-time">{{lesson.estimated_seconds}}秒精练</text>
@@ -79,13 +79,7 @@
               <view class="swipe-guide" wx:if="{{recentLessons.length > 1}}">
                 <text class="swipe-guide-text" wx:if="{{index === 0}}">← 左右滑动切换句子 →</text>
               </view>
-
-              <view class="lesson-hint">
-                <text class="hint-label">提示</text>
-                <text class="hint-text">{{lesson.mode_hint}}</text>
-              </view>
-              <view style="height: 24rpx; flex-shrink: 0;"></view>
-            </scroll-view>
+            </view>
           </swiper-item>
         </block>
       </swiper>

@@ -164,26 +164,6 @@
   background: var(--ink-strong);
 }
 
-.lesson-hint {
-  background: var(--surface-soft);
-  border-radius: 24rpx;
-  padding: 24rpx;
-}
-
-.hint-label {
-  font-size: 20rpx;
-  color: var(--ink-soft);
-  font-weight: 600;
-  display: block;
-  margin-bottom: 8rpx;
-}
-
-.hint-text {
-  font-size: 24rpx;
-  color: var(--ink-strong);
-  line-height: 1.4;
-}
-
 .bottom-section {
   display: flex;
   flex-direction: column;
