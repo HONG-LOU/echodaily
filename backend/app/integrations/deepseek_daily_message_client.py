@@ -192,6 +192,7 @@ class DeepSeekDailyMessageClient:
         current_day: date,
         seed_lesson: Lesson,
         count: int,
+        offset: int = 0,
     ) -> list[GeneratedLessonCandidate]:
         settings = get_settings()
         if settings.deepseek_api_key is None:
@@ -210,9 +211,11 @@ class DeepSeekDailyMessageClient:
             "2) 每个元素字段必须完整："
             "title, subtitle, pack_name, english_text, translation, scenario, mode_hint, "
             "blind_box_prompt, tags, difficulty, estimated_seconds, poster_blurb, theme_tone。\n"
-            "3) english_text 必须是自然、真实、可朗读的一句英文；translation 为自然中文。\n"
-            "4) tags 为 2~3 个简短中文标签；estimated_seconds 在 14~30 之间。\n"
-            "5) 避免重复内容，不要生成占位符。"
+            "3) english_text 必须是自然、真实、可朗读的一句英文；translation 为自然中文。每一张卡片的 english_text 和 translation 必须完全不同。\n"
+            "4) mode_hint 必须针对当前的 english_text 提供具体的发音或连读提示，每一张卡片的 mode_hint 必须完全不同，不要照抄参考提示。\n"
+            "5) tags 为 2~3 个简短中文标签；estimated_seconds 在 14~30 之间。\n"
+            f"6) title 可以按顺序编号，例如 'Daily English {offset + 1}', 'Daily English {offset + 2}' 等。\n"
+            "7) 避免重复内容，不要生成占位符。"
         )
         payload = {
             "model": settings.deepseek_model,
@@ -225,6 +228,7 @@ class DeepSeekDailyMessageClient:
                     "role": "user",
                     "content": (
                         f"日期种子：{current_day.isoformat()}\n"
+                        f"批次偏移量：{offset}（请生成完全不同于之前批次的内容）\n"
                         f"参考标题：{seed_lesson.title}\n"
                         f"参考副标题：{seed_lesson.subtitle}\n"
                         f"参考句子：{seed_lesson.english_text}\n"
@@ -312,9 +316,9 @@ class DeepSeekDailyMessageClient:
             candidates.append(
                 GeneratedLessonCandidate(
                     title=title,
-                    subtitle=str(item.get("subtitle", "AI 句库 · 今日推荐")).strip()
-                    or "AI 句库 · 今日推荐",
-                    pack_name=str(item.get("pack_name", "AI 每日精选")).strip() or "AI 每日精选",
+                    subtitle=str(item.get("subtitle", "每日精读 · 今日推荐")).strip()
+                    or "每日精读 · 今日推荐",
+                    pack_name=str(item.get("pack_name", "每日精选")).strip() or "每日精选",
                     english_text=english_text,
                     translation=translation,
                     scenario=str(item.get("scenario", "日常跟读训练")).strip() or "日常跟读训练",
@@ -324,7 +328,7 @@ class DeepSeekDailyMessageClient:
                         item.get("blind_box_prompt", "把这句读给未来的你，声音会更坚定。")
                     ).strip()
                     or "把这句读给未来的你，声音会更坚定。",
-                    tags=normalized_tags[:3] or ["AI句库", "真实语料"],
+                    tags=normalized_tags[:3] or ["每日更新", "真实语料"],
                     difficulty=str(item.get("difficulty", "Intermediate")).strip() or "Intermediate",
                     estimated_seconds=max(14, min(30, estimated_seconds)),
                     poster_blurb=str(

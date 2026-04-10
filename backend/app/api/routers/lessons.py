@@ -81,11 +81,18 @@ async def _generate_and_store_lessons(
         return []
 
     try:
-        candidates = await daily_message_client.generate_lesson_candidates(
-            current_day=current_day,
-            seed_lesson=seed_lesson,
-            count=len(missing_ids),
-        )
+        candidates = []
+        batch_size = 10
+        for i in range(0, len(missing_ids), batch_size):
+            batch_count = min(batch_size, len(missing_ids) - i)
+            batch_candidates = await daily_message_client.generate_lesson_candidates(
+                current_day=current_day,
+                seed_lesson=seed_lesson,
+                count=batch_count,
+                offset=i,
+            )
+            candidates.extend(batch_candidates)
+        
         return _build_generated_models(
             current_day=current_day,
             generated_ids=missing_ids,
@@ -196,15 +203,15 @@ def _build_fallback_models(
         lessons.append(
             Lesson(
                 id=lesson_id,
-                title=f"AI Daily Line {index + 1}",
-                subtitle="AI 句库 · 当日生成",
-                pack_name="AI 每日精选",
+                title=f"Daily English {index + 1}",
+                subtitle="每日精读 · 当日生成",
+                pack_name="每日精选",
                 english_text=en,
                 translation=zh,
                 scenario=seed_lesson.scenario,
                 mode_hint=hint,
                 blind_box_prompt=seed_lesson.blind_box_prompt,
-                tags=["AI句库", "每日更新"],
+                tags=["每日更新", "精选语料"],
                 difficulty=seed_lesson.difficulty,
                 estimated_seconds=seed_lesson.estimated_seconds,
                 audio_url=None,

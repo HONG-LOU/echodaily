@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_api_key: str | None = None
     deepseek_model: str = "deepseek-chat"
-    deepseek_request_timeout_seconds: int = Field(default=20, ge=5, le=120)
+    deepseek_request_timeout_seconds: int = Field(default=90, ge=5, le=180)
     wechat_app_id: str | None = None
     wechat_app_secret: str | None = None
     auth_session_days: int = Field(default=30, ge=1, le=365)
