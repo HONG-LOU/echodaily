@@ -4,6 +4,8 @@ from collections.abc import AsyncIterator
 from functools import lru_cache
 from pathlib import Path
 
+from sqlalchemy import inspect, text
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -54,6 +56,20 @@ async def get_db_session() -> AsyncIterator[AsyncSession]:
 async def init_db() -> None:
     async with get_engine().begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+        await connection.run_sync(_ensure_lessons_audio_url_column)
+
+
+def _ensure_lessons_audio_url_column(connection: Connection) -> None:
+    inspector = inspect(connection)
+    if "lessons" not in inspector.get_table_names():
+        return
+
+    column_names = {column["name"] for column in inspector.get_columns("lessons")}
+    if "audio_url" in column_names:
+        return
+
+    # Keep startup resilient when old databases miss newly added nullable columns.
+    connection.execute(text("ALTER TABLE lessons ADD COLUMN audio_url VARCHAR(512)"))
 
 
 async def close_db() -> None:

@@ -5,13 +5,14 @@ from datetime import date
 from pathlib import Path
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import func, inspect, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.db.models import Base, Lesson
 from app.db.seed import LESSON_SEEDS, seed_database
+from app.db.session import _ensure_lessons_audio_url_column
 from app.repositories.lesson_repository import LessonRepository
 
 
@@ -114,3 +115,24 @@ async def test_seed_database_backfills_missing_seed_lessons() -> None:
         lesson_count = await session.scalar(select(func.count()).select_from(Lesson))
 
     assert lesson_count == len(LESSON_SEEDS)
+
+
+@pytest.mark.asyncio
+async def test_schema_patch_adds_missing_lessons_audio_url_column() -> None:
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+
+    try:
+        async with engine.begin() as connection:
+            await connection.execute(text("CREATE TABLE lessons (id VARCHAR(64) PRIMARY KEY)"))
+            await connection.run_sync(_ensure_lessons_audio_url_column)
+            await connection.run_sync(_ensure_lessons_audio_url_column)
+            column_names = await connection.run_sync(
+                lambda sync_connection: {
+                    column["name"]
+                    for column in inspect(sync_connection).get_columns("lessons")
+                }
+            )
+    finally:
+        await engine.dispose()
+
+    assert "audio_url" in column_names
