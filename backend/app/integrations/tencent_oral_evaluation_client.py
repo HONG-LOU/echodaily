@@ -129,7 +129,7 @@ class TencentOralEvaluationClient:
         request.SessionId = session_id
         request.RefText = reference_text
         request.WorkMode = 1
-        request.EvalMode = 1
+        request.EvalMode = 2
         request.ScoreCoeff = settings.tencentcloud_soe_score_coeff
         request.SentenceInfoEnabled = 0
         request.ServerType = 0
@@ -304,7 +304,7 @@ class TencentOralEvaluationClient:
         voice_id = str(uuid4())
         timestamp = int(time.time())
         params: dict[str, str | int | float] = {
-            "eval_mode": 1,
+            "eval_mode": 2,
             "expired": timestamp + max(60, settings.tencentcloud_soe_req_timeout_seconds * 2),
             "nonce": random.randint(10_000_000, 99_999_999),
             "rec_mode": 1,
